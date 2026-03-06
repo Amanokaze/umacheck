@@ -6,6 +6,8 @@
 
 **다른 언어:** [English](README_EN.md) · [日本語](README_JA.md) · [繁體中文](README_ZH.md)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ---
 
 ## 주요 기능
@@ -126,3 +128,17 @@ uma-fancheck-app/
 │   └── app.html     # 앱 UI (HTML/CSS/JS)
 └── output/          # 캡처 결과 이미지 저장 폴더
 ```
+
+---
+
+## 기여 및 문의
+
+이 프로젝트는 오픈소스입니다. 버그 제보, 기능 제안, Pull Request 모두 환영합니다.
+
+- **버그 제보 / 기능 제안:** [GitHub Issues](https://github.com/Amanokaze/umacheck/issues)
+
+---
+
+## 라이선스
+
+이 프로젝트는 [MIT License](LICENSE) 하에 배포됩니다.

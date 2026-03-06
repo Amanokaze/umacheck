@@ -6,6 +6,8 @@
 
 **其他語言:** [한국어](README.md) · [English](README_EN.md) · [日本語](README_JA.md)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ---
 
 ## 主要功能
@@ -126,3 +128,17 @@ uma-fancheck-app/
 │   └── app.html     # 應用程式 UI（HTML/CSS/JS）
 └── output/          # 截圖結果儲存資料夾
 ```
+
+---
+
+## 貢獻與回饋
+
+本專案為開源專案，歡迎回報 Bug、提出功能建議或送出 Pull Request。
+
+- **Bug 回報 / 功能建議:** [GitHub Issues](https://github.com/Amanokaze/umacheck/issues)
+
+---
+
+## 授權
+
+本專案以 [MIT License](LICENSE) 授權發布。

@@ -6,6 +6,8 @@ A Windows desktop app that automatically captures the fan count list of Uma Musu
 
 **Other languages:** [한국어](README.md) · [日本語](README_JA.md) · [繁體中文](README_ZH.md)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ---
 
 ## Features
@@ -126,3 +128,17 @@ uma-fancheck-app/
 │   └── app.html     # App UI (HTML/CSS/JS)
 └── output/          # Captured image output folder
 ```
+
+---
+
+## Contributing & Support
+
+This is an open-source project. Bug reports, feature requests, and pull requests are all welcome.
+
+- **Bug reports / Feature requests:** [GitHub Issues](https://github.com/Amanokaze/umacheck/issues)
+
+---
+
+## License
+
+This project is distributed under the [MIT License](LICENSE).

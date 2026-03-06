@@ -320,6 +320,7 @@
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
       position: relative; animation: modal-in 0.18s ease;
     }
+    .about-modal { width: 430px; }
     @keyframes modal-in { from { opacity:0; transform: scale(0.93); } to { opacity:1; transform: scale(1); } }
     .modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: var(--dim); font-size: 1rem; cursor: pointer; line-height: 1; }
     .modal-close:hover { color: var(--text); }
@@ -330,6 +331,14 @@
     .modal-row:last-child { border-bottom: none; }
     .modal-row .label { color: var(--muted); }
     .modal-row .value { color: var(--text); font-weight: 600; }
+    .about-links { margin-top: 8px; }
+    .about-links .modal-row { border-bottom: none; padding: 7px 0; }
+    .modal-link {
+      display: inline-block; margin-top: 0;
+      color: var(--accent-light); font-size: 0.8rem; font-weight: 600;
+      text-decoration: none;
+    }
+    .modal-link:hover { text-decoration: underline; }
 
     /* 초기 설정 모달 */
     .setup-modal { width: 440px; }
@@ -458,7 +467,7 @@
 
   <!-- About 모달 -->
   <div class="modal-backdrop" id="about-modal">
-    <div class="modal">
+    <div class="modal about-modal">
       <button class="modal-close" id="about-close">✕</button>
       <div class="modal-logo">
         <img id="about-logo-img" src="" alt="" />
@@ -471,6 +480,41 @@
       <div class="modal-row">
         <span class="label" id="about-creator-label">제작자</span>
         <span class="value">선두의경치 (한국서버)</span>
+      </div>
+      <div class="about-links">
+        <div class="modal-row">
+          <span class="label" id="about-open-source-note">우마체크는 오픈소스로 운영됩니다.</span>
+        </div>
+        <div class="modal-row">
+          <span class="label" id="about-repo-label">저장소</span>
+          <a
+            class="modal-link"
+            id="about-repo-link"
+            href="https://github.com/Amanokaze/umacheck"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Link</a>
+        </div>
+        <div class="modal-row">
+          <span class="label" id="about-issues-label">문의/개선 제안</span>
+          <a
+            class="modal-link"
+            id="about-issues-link"
+            href="https://github.com/Amanokaze/umacheck/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Link</a>
+        </div>
+        <div class="modal-row">
+          <span class="label" id="about-docs-label">설명서</span>
+          <a
+            class="modal-link"
+            id="about-docs-link"
+            href="https://github.com/Amanokaze/umacheck/blob/main/README.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Link</a>
+        </div>
       </div>
     </div>
   </div>
@@ -695,6 +739,14 @@ const i18n = {
     labelDiffThreshold: '유사도 임계값 (%)', descDiffThreshold: '이 값 이상이면 스크롤 끝으로 판단',
     btnSaveSettings: '설정 저장', toastSaved: '✓ 저장되었습니다',
     aboutVersion: '버전', aboutCreator: '제작자',
+    aboutOpenSourceNote: '우마체크는 오픈소스로 운영됩니다.',
+    aboutRepo: '저장소',
+    aboutRepoLinkText: 'Link',
+    aboutIssues: '문의/개선 제안',
+    aboutIssuesLinkText: 'Link',
+    aboutDocs: '설명서',
+    aboutDocsLinkText: 'Link',
+    aboutDocsHref: 'https://github.com/Amanokaze/umacheck/blob/main/README.md',
     errNoApiKey: 'API Key를 입력해주세요.',
     errNoImage: '이미지를 먼저 업로드해주세요.',
     errImageOnly: '이미지 파일만 지원합니다.',
@@ -756,6 +808,14 @@ const i18n = {
     descDiffThreshold: 'Scroll end detected when similarity exceeds this value',
     btnSaveSettings: 'Save Settings', toastSaved: '✓ Saved',
     aboutVersion: 'Version', aboutCreator: 'Creator',
+    aboutOpenSourceNote: 'UmaCheck is maintained as an open-source project.',
+    aboutRepo: 'Repository',
+    aboutRepoLinkText: 'Link',
+    aboutIssues: 'Support / Improvements',
+    aboutIssuesLinkText: 'Link',
+    aboutDocs: 'Documentation',
+    aboutDocsLinkText: 'Link',
+    aboutDocsHref: 'https://github.com/Amanokaze/umacheck/blob/main/README_EN.md',
     errNoApiKey: 'Please enter an API Key.',
     errNoImage: 'Please upload an image first.',
     errImageOnly: 'Only image files are supported.',
@@ -817,6 +877,14 @@ const i18n = {
     descDiffThreshold: 'この値以上でスクロール終端と判断',
     btnSaveSettings: '設定保存', toastSaved: '✓ 保存されました',
     aboutVersion: 'バージョン', aboutCreator: '制作者',
+    aboutOpenSourceNote: 'ウマチェックはオープンソースとして運用されています。',
+    aboutRepo: 'リポジトリ',
+    aboutRepoLinkText: 'Link',
+    aboutIssues: '問い合わせ / 改善提案',
+    aboutIssuesLinkText: 'Link',
+    aboutDocs: '説明書',
+    aboutDocsLinkText: 'Link',
+    aboutDocsHref: 'https://github.com/Amanokaze/umacheck/blob/main/README_JA.md',
     errNoApiKey: 'API Keyを入力してください。',
     errNoImage: 'まず画像をアップロードしてください。',
     errImageOnly: '画像ファイルのみ対応しています。',
@@ -878,6 +946,14 @@ const i18n = {
     descDiffThreshold: '相似度達到此值時判斷為捲動結束',
     btnSaveSettings: '儲存設定', toastSaved: '✓ 已儲存',
     aboutVersion: '版本', aboutCreator: '製作者',
+    aboutOpenSourceNote: '賽馬娘檢查以開源方式維護與運作。',
+    aboutRepo: '儲存庫',
+    aboutRepoLinkText: 'Link',
+    aboutIssues: '詢問 / 改進建議',
+    aboutIssuesLinkText: 'Link',
+    aboutDocs: '說明書',
+    aboutDocsLinkText: 'Link',
+    aboutDocsHref: 'https://github.com/Amanokaze/umacheck/blob/main/README_ZH.md',
     errNoApiKey: '請輸入 API Key。',
     errNoImage: '請先上傳圖片。',
     errImageOnly: '僅支援圖片檔案。',
@@ -963,6 +1039,14 @@ function applyLang() {
   // About 모달
   document.getElementById('about-version-label').textContent = t('aboutVersion');
   document.getElementById('about-creator-label').textContent = t('aboutCreator');
+  document.getElementById('about-open-source-note').textContent = t('aboutOpenSourceNote');
+  document.getElementById('about-repo-label').textContent = t('aboutRepo');
+  document.getElementById('about-repo-link').textContent = t('aboutRepoLinkText');
+  document.getElementById('about-issues-label').textContent = t('aboutIssues');
+  document.getElementById('about-issues-link').textContent = t('aboutIssuesLinkText');
+  document.getElementById('about-docs-label').textContent = t('aboutDocs');
+  document.getElementById('about-docs-link').textContent = t('aboutDocsLinkText');
+  document.getElementById('about-docs-link').href = t('aboutDocsHref');
 
   // 초기 설정 모달
   document.getElementById('setup-title').textContent           = t('setupTitle');
