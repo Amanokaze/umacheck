@@ -1,0 +1,20 @@
+# Python cache/bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local runtime/output artifacts
+output/
+
+# Local app settings (may contain machine paths / API key)
+config.json
+
+# WebView2 persistent profile (localStorage, cookies, cache)
+.webview_data/
+
+# Local tool metadata
+.claude/

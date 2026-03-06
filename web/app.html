@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>우마체크</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0f1117;
+      --surface:      #1e2130;
+      --surface2:     #111827;
+      --border:       #2d3348;
+      --border2:      #3d4460;
+      --text:         #e2e8f0;
+      --muted:        #94a3b8;
+      --dim:          #475569;
+      --accent:       #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-light: #818cf8;
+      --success:      #22c55e;
+      --success-dim:  #86efac;
+      --error:        #f87171;
+      --warn:         #fbbf24;
+    }
+
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    .tab-bar {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      flex-shrink: 0;
+      gap: 2px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 14px 9px 4px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--accent-light);
+      letter-spacing: 0.03em;
+      border-right: 1px solid var(--border);
+      margin-right: 8px;
+    }
+    .logo img { width: 20px; height: 20px; border-radius: 4px; }
+
+    .tab-btn {
+      background: none; border: none;
+      color: var(--muted); font-size: 0.83rem;
+      padding: 10px 16px; cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover  { color: var(--text); }
+    .tab-btn.active { color: var(--accent-light); border-bottom-color: var(--accent-light); }
+
+    .tab-content { flex: 1; overflow: hidden; position: relative; }
+
+    .tab-panel {
+      position: absolute; inset: 0;
+      overflow-y: auto; display: none;
+      padding: 24px 22px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .tab-panel::-webkit-scrollbar { width: 5px; }
+    .tab-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .tab-panel.active { display: block; }
+
+    .section { margin-bottom: 20px; }
+
+    .section-title {
+      font-size: 0.72rem; font-weight: 600;
+      color: var(--dim); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 10px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px;
+    }
+
+    .field-row { display: flex; gap: 8px; align-items: center; }
+
+    .field-row label {
+      font-size: 0.78rem; color: var(--muted);
+      white-space: nowrap; min-width: 52px;
+    }
+
+    .field-row input,
+    .field-row select {
+      flex: 1; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 11px; color: var(--text);
+      font-size: 0.83rem; outline: none;
+      transition: border-color 0.2s;
+    }
+    .field-row input:focus,
+    .field-row select:focus { border-color: var(--accent); }
+    .field-row input[type="password"],
+    .field-row input[type="text"][data-mono] { font-family: monospace; }
+
+    .field-row select {
+      cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 11px center;
+      padding-right: 30px;
+    }
+
+    .btn {
+      padding: 8px 15px; border-radius: 8px; border: none;
+      font-size: 0.83rem; font-weight: 600; cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-ghost    { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+    .btn-ghost:hover { background: #262c40; color: var(--text); }
+    .btn-primary  { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-success  { background: #14532d; color: var(--success-dim); border: 1px solid #16a34a44; }
+    .btn-success:hover { background: #166534; }
+    .btn-danger   { background: #7f1d1d; color: #fca5a5; }
+    .btn-danger:hover { background: #991b1b; }
+    .btn-icon { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; }
+
+    /* 캡처 탭 */
+    .game-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--dim); flex-shrink: 0;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .status-dot.running { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .status-dot.warn    { background: var(--warn); }
+    .status-dot.error   { background: var(--error); }
+
+    .game-info { flex: 1; }
+    .game-info strong { display: block; font-size: 0.9rem; color: var(--text); margin-bottom: 2px; }
+    .game-info span   { font-size: 0.78rem; color: var(--muted); }
+    .game-actions { display: flex; gap: 6px; }
+
+    .guide-box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 13px 15px;
+      font-size: 0.8rem; color: var(--muted); line-height: 1.75;
+    }
+    .guide-box ol { padding-left: 16px; }
+    .guide-box li { margin-bottom: 3px; }
+    .guide-box li strong { color: var(--accent-light); }
+
+    #start-btn { width: 100%; padding: 13px; font-size: 0.95rem; border-radius: 11px; }
+
+    #progress-section { display: none; }
+    .capture-warning {
+      background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.28);
+      border-radius: 8px; padding: 8px 13px;
+      font-size: 0.8rem; color: var(--warn); margin-bottom: 12px;
+    }
+    .progress-header { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-bottom: 7px; }
+    .progress-bar-bg { background: var(--surface2); border-radius: 999px; height: 5px; overflow: hidden; margin-bottom: 10px; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--accent)); background-size: 200% 100%; border-radius: 999px; width: 0%; transition: width 0.4s ease; animation: shimmer 1.4s infinite linear; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    .log-box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 9px; padding: 11px 13px;
+      font-family: "Consolas", monospace; font-size: 0.76rem;
+      color: var(--muted); line-height: 1.7;
+      max-height: 160px; overflow-y: auto;
+    }
+    .log-box .log-err { color: var(--error); }
+    .log-box .log-ok  { color: var(--success-dim); }
+    .log-box::-webkit-scrollbar { width: 4px; }
+    .log-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    #result-section { display: none; }
+    .result-card { border-color: #16a34a44; }
+    .result-label { font-size: 0.78rem; color: var(--success-dim); font-weight: 600; margin-bottom: 8px; }
+    .result-path  { font-family: monospace; font-size: 0.75rem; color: var(--muted); word-break: break-all; margin-bottom: 12px; }
+    .result-actions { display: flex; gap: 8px; }
+
+    /* 분석 탭 */
+    .analyze-hint { font-size: 0.78rem; color: var(--dim); padding-left: 60px; margin-top: 4px; }
+    .analyze-hint a { color: var(--accent); text-decoration: none; }
+    .analyze-hint a:hover { text-decoration: underline; }
+
+    #drop-zone {
+      border: 2px dashed var(--border); border-radius: 10px;
+      padding: 36px 20px; text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #drop-zone.drag-over { border-color: var(--accent); background: rgba(99,102,241,0.06); }
+    #drop-zone .dz-icon  { font-size: 2.2rem; margin-bottom: 10px; opacity: 0.55; }
+    #drop-zone p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    #drop-zone p strong { color: var(--accent-light); cursor: pointer; text-decoration: underline; }
+    #file-input { display: none; }
+
+    #preview-wrap { display: none; position: relative; border-radius: 9px; overflow: hidden; }
+    #preview-wrap img { width: 100%; max-height: 260px; object-fit: contain; background: var(--surface2); border-radius: 9px; display: block; }
+    #clear-img-btn {
+      position: absolute; top: 7px; right: 7px;
+      width: 26px; height: 26px;
+      background: rgba(0,0,0,0.6); border: none; border-radius: 50%;
+      color: var(--text); font-size: 0.75rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #clear-img-btn:hover { background: rgba(239,68,68,0.7); }
+
+    #extract-btn { width: 100%; padding: 12px; font-size: 0.92rem; border-radius: 10px; }
+
+    .option-row {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 0.78rem; color: var(--dim); cursor: pointer;
+      user-select: none; margin-top: -6px;
+    }
+    .option-row input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
+    .option-row:hover { color: var(--muted); }
+
+    #az-progress-wrap { display: none; flex-direction: column; gap: 7px; }
+    #az-status { display: none; font-size: 0.8rem; color: var(--muted); text-align: center; }
+    #az-status.error { color: var(--error); }
+
+    #output-wrap { display: none; }
+    .output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+    .output-header span { font-size: 0.78rem; color: var(--muted); }
+    .count-badge { display: inline-block; background: #312e81; color: #c7d2fe; font-size: 0.7rem; border-radius: 999px; padding: 2px 9px; margin-left: 7px; }
+    #copy-btn { background: var(--surface); border: 1px solid var(--border2); color: #c7d2fe; border-radius: 7px; padding: 4px 13px; font-size: 0.78rem; cursor: pointer; transition: background 0.15s; }
+    #copy-btn:hover { background: var(--border2); }
+    #copy-btn.copied { color: var(--success-dim); border-color: #22c55e44; }
+    #output-box {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 9px;
+      padding: 14px; font-family: "Consolas", monospace; font-size: 0.88rem;
+      line-height: 1.9; color: var(--success-dim); white-space: pre-wrap;
+      min-height: 80px; max-height: 300px; overflow-y: auto;
+    }
+    #output-box::-webkit-scrollbar { width: 5px; }
+    #output-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* 설정 탭 */
+    .settings-card { display: flex; flex-direction: column; gap: 18px; }
+    .setting-item  { display: flex; flex-direction: column; gap: 6px; }
+    .setting-label { font-size: 0.72rem; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; }
+    .setting-desc  { font-size: 0.73rem; color: var(--dim); }
+    .num-input {
+      width: 90px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 7px; padding: 7px 10px; color: var(--text);
+      font-size: 0.83rem; outline: none; transition: border-color 0.2s;
+    }
+    .num-input:focus { border-color: var(--accent); }
+    .divider { height: 1px; background: var(--border); }
+
+    /* 우측 상단 버튼 */
+    .tab-bar-spacer { flex: 1; }
+
+    .icon-btn {
+      width: 30px; height: 30px;
+      background: none; border: 1px solid var(--border);
+      border-radius: 50%; color: var(--dim);
+      font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { color: var(--accent-light); border-color: var(--accent); background: rgba(99,102,241,0.08); }
+
+    /* 언어 피커 */
+    .lang-picker { position: relative; flex-shrink: 0; margin-right: 4px; }
+
+    .lang-btn { font-size: 1rem; }
+    .lang-btn.open { color: var(--accent-light); border-color: var(--accent); background: rgba(99,102,241,0.08); }
+
+    .lang-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px); right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 10px; padding: 4px;
+      min-width: 130px; z-index: 200;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      animation: modal-in 0.15s ease;
+    }
+    .lang-dropdown.open { display: block; }
+
+    .lang-option {
+      display: block; width: 100%;
+      background: none; border: none;
+      color: var(--text); font-size: 0.83rem;
+      padding: 7px 13px; text-align: left;
+      cursor: pointer; border-radius: 7px;
+      transition: background 0.12s;
+    }
+    .lang-option:hover { background: rgba(99,102,241,0.12); }
+    .lang-option.active { color: var(--accent-light); font-weight: 600; }
+
+    /* About 모달 */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 14px; padding: 28px 30px; width: 320px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      position: relative; animation: modal-in 0.18s ease;
+    }
+    @keyframes modal-in { from { opacity:0; transform: scale(0.93); } to { opacity:1; transform: scale(1); } }
+    .modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: var(--dim); font-size: 1rem; cursor: pointer; line-height: 1; }
+    .modal-close:hover { color: var(--text); }
+    .modal-logo { display: flex; align-items: center; gap: 9px; margin-bottom: 18px; }
+    .modal-logo img { width: 28px; height: 28px; border-radius: 6px; }
+    .modal-logo-name { font-size: 1.05rem; font-weight: 700; color: var(--accent-light); }
+    .modal-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.83rem; }
+    .modal-row:last-child { border-bottom: none; }
+    .modal-row .label { color: var(--muted); }
+    .modal-row .value { color: var(--text); font-weight: 600; }
+
+    /* 초기 설정 모달 */
+    .setup-modal { width: 440px; }
+    .setup-header { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+    .setup-header img { width: 32px; height: 32px; border-radius: 7px; }
+    .setup-header-title { font-size: 1rem; font-weight: 700; color: var(--accent-light); margin-bottom: 3px; }
+    .setup-header-desc  { font-size: 0.78rem; color: var(--muted); }
+    .setup-field { margin-bottom: 16px; }
+    .setup-field > label {
+      display: flex; align-items: center;
+      font-size: 0.72rem; font-weight: 600; color: var(--dim);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 7px;
+    }
+    .setup-field-desc { font-size: 0.72rem; color: var(--dim); margin-top: 5px; }
+    .setup-error { font-size: 0.75rem; color: var(--error); margin-top: 5px; display: none; }
+    .setup-confirm { width: 100%; padding: 11px; font-size: 0.9rem; border-radius: 10px; margin-top: 4px; }
+
+    /* ? 도움말 버튼 */
+    .help-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 17px; height: 17px; border-radius: 50%;
+      background: var(--border); border: none;
+      color: var(--muted); font-size: 0.68rem; font-weight: 700;
+      cursor: pointer; margin-left: 6px; flex-shrink: 0;
+      text-transform: none; letter-spacing: 0;
+      transition: background 0.15s, color 0.15s;
+    }
+    .help-btn:hover { background: var(--accent); color: #fff; }
+
+    /* API Key 도움말 모달 */
+    .help-modal { width: 380px; }
+    .help-modal-title { font-size: 0.92rem; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+    .help-steps { padding-left: 18px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 9px; }
+    .help-steps li { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+    .help-steps li a { color: var(--accent-light); text-decoration: none; }
+    .help-steps li a:hover { text-decoration: underline; }
+    .help-steps li strong { color: var(--text); }
+    .help-note {
+      font-size: 0.75rem; color: var(--dim); margin-bottom: 16px;
+      padding: 9px 12px; background: var(--surface2);
+      border-radius: 8px; border-left: 3px solid var(--accent); line-height: 1.5;
+    }
+    .help-close-btn { width: 100%; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 탭 바 -->
+  <div class="tab-bar">
+    <div class="logo">
+      <img id="logo-img" src="" alt="" />
+      <span id="logo-name">우마체크</span>
+    </div>
+    <button class="tab-btn active" data-tab="capture" id="tab-btn-capture">캡처</button>
+    <button class="tab-btn" data-tab="analyze" id="tab-btn-analyze">분석</button>
+    <button class="tab-btn" data-tab="settings" id="tab-btn-settings">설정</button>
+    <div class="tab-bar-spacer"></div>
+
+    <!-- 언어 선택 버튼 -->
+    <div class="lang-picker">
+      <button class="icon-btn lang-btn" id="lang-btn" title="Language / 언어">🌐</button>
+      <div class="lang-dropdown" id="lang-dropdown">
+        <button class="lang-option" data-lang="ko">한국어</button>
+        <button class="lang-option" data-lang="en">English</button>
+        <button class="lang-option" data-lang="ja">日本語</button>
+        <button class="lang-option" data-lang="zh">繁體中文</button>
+      </div>
+    </div>
+
+    <button class="icon-btn" id="about-btn" title="About">i</button>
+  </div>
+
+  <!-- 초기 설정 모달 (첫 실행) -->
+  <div class="modal-backdrop" id="setup-modal">
+    <div class="modal setup-modal">
+      <div class="setup-header">
+        <img id="setup-logo-img" src="" alt="" />
+        <div>
+          <div class="setup-header-title" id="setup-title"></div>
+          <div class="setup-header-desc"  id="setup-desc"></div>
+        </div>
+      </div>
+
+      <div class="setup-field">
+        <label id="setup-label-folder"></label>
+        <div class="field-row">
+          <input type="text" id="setup-folder" data-mono placeholder="C:\kakaogames\umamusume" style="font-family:monospace;" />
+          <button class="btn btn-ghost" id="setup-browse-btn"></button>
+        </div>
+        <div class="setup-field-desc" id="setup-desc-folder"></div>
+        <div class="setup-error"     id="setup-folder-error"></div>
+      </div>
+
+      <div class="setup-field">
+        <label>
+          <span id="setup-label-apikey-text"></span>
+          <button class="help-btn" id="apikey-help-btn">?</button>
+        </label>
+        <div class="field-row">
+          <input type="password" id="setup-apikey" placeholder="AIza..." autocomplete="off" />
+          <button class="btn btn-ghost btn-icon" id="setup-toggle-pw">👁</button>
+        </div>
+        <div class="setup-field-desc" id="setup-desc-apikey"></div>
+      </div>
+
+      <button class="btn btn-primary setup-confirm" id="setup-confirm-btn"></button>
+    </div>
+  </div>
+
+  <!-- API Key 도움말 모달 -->
+  <div class="modal-backdrop" id="apikey-help-modal">
+    <div class="modal help-modal">
+      <button class="modal-close" id="apikey-help-close">✕</button>
+      <div class="help-modal-title" id="help-modal-title"></div>
+      <ol class="help-steps">
+        <li id="help-step1"></li>
+        <li id="help-step2"></li>
+        <li id="help-step3"></li>
+        <li id="help-step4"></li>
+      </ol>
+      <div class="help-note" id="help-note"></div>
+      <button class="btn btn-ghost help-close-btn" id="apikey-help-close-btn"></button>
+    </div>
+  </div>
+
+  <!-- About 모달 -->
+  <div class="modal-backdrop" id="about-modal">
+    <div class="modal">
+      <button class="modal-close" id="about-close">✕</button>
+      <div class="modal-logo">
+        <img id="about-logo-img" src="" alt="" />
+        <span class="modal-logo-name" id="about-app-name">우마체크</span>
+      </div>
+      <div class="modal-row">
+        <span class="label" id="about-version-label">버전</span>
+        <span class="value">v0.1.1</span>
+      </div>
+      <div class="modal-row">
+        <span class="label" id="about-creator-label">제작자</span>
+        <span class="value">선두의경치 (한국서버)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content">
+
+    <!-- 캡처 탭 -->
+    <div class="tab-panel active" id="tab-capture">
+
+      <div class="section">
+        <div class="card game-card">
+          <div class="status-dot" id="game-dot"></div>
+          <div class="game-info">
+            <strong id="game-title">...</strong>
+            <span id="game-desc"></span>
+          </div>
+          <div class="game-actions">
+            <button class="btn btn-success" id="launch-btn"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title" id="section-guide"></div>
+        <div class="guide-box">
+          <ol>
+            <li id="guide-step1"></li>
+            <li id="guide-step2"></li>
+            <li id="guide-step3"></li>
+            <li id="guide-step4"></li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="section">
+        <button class="btn btn-primary" id="start-btn" disabled></button>
+      </div>
+
+      <div class="section" id="progress-section">
+        <div class="capture-warning" id="capture-warn-msg"></div>
+        <div class="section-title" id="section-progress"></div>
+        <div class="progress-header">
+          <span id="prog-label"></span>
+          <span id="prog-pct">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="prog-bar"></div>
+        </div>
+        <div class="log-box" id="log-box"></div>
+      </div>
+
+      <div class="section" id="result-section">
+        <div class="section-title" id="section-done"></div>
+        <div class="card result-card">
+          <div class="result-label" id="capture-complete-label"></div>
+          <div class="result-path" id="result-path"></div>
+          <div class="result-actions">
+            <button class="btn btn-ghost" id="open-folder-btn"></button>
+            <button class="btn btn-primary" id="go-analyze-btn"></button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-capture -->
+
+    <!-- 분석 탭 -->
+    <div class="tab-panel" id="tab-analyze">
+
+      <div class="section">
+        <div class="section-title" id="section-gemini">Gemini API</div>
+        <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="field-row">
+            <label id="label-apikey">API Key</label>
+            <input type="password" id="api-key" placeholder="AIza..." autocomplete="off" />
+            <button class="btn btn-ghost btn-icon" id="toggle-pw" title="show/hide">👁</button>
+          </div>
+          <p class="analyze-hint"><span id="apikey-hint"></span><a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></p>
+          <div class="field-row">
+            <label id="label-model"></label>
+            <select id="model-select">
+              <option value="gemini-2.5-flash" id="model-opt-flash25"></option>
+              <option value="gemini-2.0-flash" id="model-opt-flash20"></option>
+              <option value="gemini-2.0-flash-lite" id="model-opt-flashlite"></option>
+              <option value="gemini-2.5-pro" id="model-opt-pro25"></option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title" id="section-image"></div>
+        <div id="drop-zone">
+          <div class="dz-icon">🖼️</div>
+          <p id="dz-text-wrap"></p>
+          <input type="file" id="file-input" accept="image/*" />
+        </div>
+        <div id="preview-wrap">
+          <img id="preview-img" src="" alt="preview" />
+          <button id="clear-img-btn" title="remove">✕</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <button class="btn btn-primary" id="extract-btn" disabled></button>
+      </div>
+      <label class="option-row" style="margin-bottom:16px;">
+        <input type="checkbox" id="dedup-check" checked />
+        <span id="dedup-label"></span>
+      </label>
+
+      <div id="az-progress-wrap" style="display:none;flex-direction:column;gap:7px;margin-bottom:12px;">
+        <div class="progress-header">
+          <span id="az-prog-text"></span>
+          <span></span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="az-prog-bar" style="width:60%"></div>
+        </div>
+      </div>
+
+      <div id="az-status" style="display:none;margin-bottom:12px;"></div>
+
+      <div id="output-wrap">
+        <div class="output-header">
+          <span><span id="output-header-text"></span><span id="count-badge" class="count-badge"></span></span>
+          <button id="copy-btn"></button>
+        </div>
+        <div id="output-box"></div>
+      </div>
+
+    </div><!-- /tab-analyze -->
+
+    <!-- 설정 탭 -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="section">
+        <div class="section-title" id="section-game"></div>
+        <div class="card settings-card">
+
+          <div class="setting-item">
+            <div class="setting-label" id="label-game-folder"></div>
+            <div class="field-row">
+              <input type="text" id="game-folder" data-mono placeholder="C:\kakaogames\umamusume" style="font-family:monospace;" />
+              <button class="btn btn-ghost" id="browse-btn"></button>
+            </div>
+            <div class="setting-desc" id="desc-game-folder"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="setting-item">
+            <div class="setting-label" id="label-scroll-delay"></div>
+            <input type="number" class="num-input" id="scroll-delay" min="0.3" max="5" step="0.1" value="0.8" />
+            <div class="setting-desc" id="desc-scroll-delay"></div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label" id="label-scroll-amount"></div>
+            <input type="number" class="num-input" id="scroll-amount" min="1" max="20" step="1" value="5" />
+            <div class="setting-desc" id="desc-scroll-amount"></div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label" id="label-diff-threshold"></div>
+            <input type="number" class="num-input" id="diff-threshold" min="90" max="100" step="0.5" value="99.5" />
+            <div class="setting-desc" id="desc-diff-threshold"></div>
+          </div>
+
+        </div>
+      </div>
+      <div class="section" style="display:flex;align-items:center;gap:12px;">
+        <button class="btn btn-primary" id="save-settings-btn"></button>
+        <span id="save-toast" style="display:none;font-size:0.8rem;color:var(--success-dim);"></span>
+      </div>
+    </div><!-- /tab-settings -->
+
+  </div><!-- /tab-content -->
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════════
+   i18n
+════════════════════════════════════════ */
+const i18n = {
+  ko: {
+    appName: '우마체크',
+    tabCapture: '캡처', tabAnalyze: '분석', tabSettings: '설정',
+    gameChecking: '우마무스메 상태 확인 중...',
+    gameRunning: '우마무스메 실행 중',
+    gameRunningDesc: '서클원 팬수 화면으로 이동 후 캡처를 시작하세요.',
+    gameNotRunning: '우마무스메가 실행되지 않음',
+    gameNotRunningDesc: '게임을 먼저 실행해주세요.',
+    gameStatusError: '상태 확인 오류',
+    btnLaunchGame: '▶ 게임 실행', btnLaunching: '실행 중...',
+    sectionGuide: '사용 방법',
+    guideStep1: '게임을 실행하고 <strong>서클 메뉴 → 서클 정보</strong>로 이동하세요.',
+    guideStep2: '목록을 <strong>맨 위</strong>로 스크롤한 상태에서 아래 <strong>[캡처 시작]</strong>을 누르세요.',
+    guideStep3: '앱이 자동으로 스크롤하며 화면을 캡처합니다.',
+    guideStep4: '완료되면 <strong>[분석] 탭</strong>으로 자동 이동해 팬수를 추출합니다.',
+    btnStartCapture: '캡처 시작', btnStopCapture: '⏹ 캡처 중단',
+    sectionProgress: '진행 상황', progWaiting: '대기 중...',
+    sectionDone: '완료', captureComplete: '✓ 캡처 완료',
+    btnOpenFolder: '폴더 열기', btnGoAnalyze: '분석 탭으로 →',
+    sectionGeminiApi: 'Gemini API', labelApiKey: 'API Key',
+    apiKeyHint: '발급: ', labelModel: '모델',
+    modelFlash25: 'gemini-2.5-flash — 최신·추천 (무료)',
+    modelFlash20: 'gemini-2.0-flash — 안정적 (무료)',
+    modelFlashLite: 'gemini-2.0-flash-lite — 가장 저렴',
+    modelPro25: 'gemini-2.5-pro — 최고 성능 (유료)',
+    sectionImage: '이미지',
+    dzText: '이미지를 드래그하거나 ', dzSelectFile: '파일 선택',
+    btnExtract: 'Extract',
+    dedupLabel: '연속 중복 자동 제거 (같은 숫자가 연속으로 나오면 하나만 유지)',
+    azPreparing: '준비 중...', outputHeader: '추출 결과',
+    btnCopy: '복사', btnCopied: '복사됨 ✓',
+    noResults: '(결과 없음 — 이미지에서 "000명" 패턴을 찾지 못했습니다)',
+    countFmt: (n, d) => d > 0 ? `${n}개 (연속중복 ${d}개 제거)` : `${n}개`,
+    sectionGame: '게임', labelGameFolder: '게임 설치 폴더',
+    descGameFolder: 'UMMS_Launcher.exe가 있는 폴더', btnBrowse: '찾아보기',
+    labelScrollDelay: '스크롤 간격 (초)',
+    descScrollDelay: '스크롤 후 다음 캡처까지 대기 시간 — 느린 PC는 높게',
+    labelScrollAmount: '스크롤 강도', descScrollAmount: '한 번에 스크롤하는 칸 수',
+    labelDiffThreshold: '유사도 임계값 (%)', descDiffThreshold: '이 값 이상이면 스크롤 끝으로 판단',
+    btnSaveSettings: '설정 저장', toastSaved: '✓ 저장되었습니다',
+    aboutVersion: '버전', aboutCreator: '제작자',
+    errNoApiKey: 'API Key를 입력해주세요.',
+    errNoImage: '이미지를 먼저 업로드해주세요.',
+    errImageOnly: '이미지 파일만 지원합니다.',
+    errPrefix: '오류: ', errLaunchFail: '게임 실행 실패: ',
+    logCaptureComplete: '캡처 완료: ',
+    progStarting: '시작 중...', progDone: '완료!', progError: '오류 발생',
+    captureWarning: '⚠ 캡처 중에는 마우스를 움직이지 마세요.',
+    setupTitle: '첫 실행 설정', setupDesc: '사용 전 아래 정보를 입력해 주세요.',
+    setupLabelFolder: '게임 설치 폴더', setupDescFolder: 'UMMS_Launcher.exe가 있는 폴더',
+    setupLabelApiKey: 'Gemini API Key', setupDescApiKey: 'AI 분석에 사용됩니다. 나중에 설정 탭에서 변경 가능합니다.',
+    setupConfirm: '시작하기', setupFolderRequired: '게임 폴더를 먼저 입력해 주세요.',
+    helpTitle: 'Gemini API Key 발급 방법',
+    helpStep1: '<a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>에 접속하세요.',
+    helpStep2: 'Google 계정으로 로그인하세요.',
+    helpStep3: '<strong>[API 키 만들기]</strong> 버튼을 클릭하세요.',
+    helpStep4: '생성된 키를 복사해서 API Key 입력란에 붙여넣으세요.',
+    helpNote: '※ AI Studio에서 발급한 키를 사용해야 무료 티어가 적용됩니다. Google Cloud Console 키 사용 시 무료 티어 없음.',
+    helpClose: '닫기',
+  },
+  en: {
+    appName: 'UmaCheck',
+    tabCapture: 'Capture', tabAnalyze: 'Analyze', tabSettings: 'Settings',
+    gameChecking: 'Checking game status...',
+    gameRunning: 'Uma Musume is running',
+    gameRunningDesc: 'Navigate to Circle Info screen, then start capture.',
+    gameNotRunning: 'Uma Musume is not running',
+    gameNotRunningDesc: 'Please launch the game first.',
+    gameStatusError: 'Status check error',
+    btnLaunchGame: '▶ Launch Game', btnLaunching: 'Launching...',
+    sectionGuide: 'How to Use',
+    guideStep1: 'Launch the game and go to <strong>Circle Menu → Circle Info</strong>.',
+    guideStep2: 'Scroll the list to the <strong>top</strong>, then click <strong>[Start Capture]</strong>.',
+    guideStep3: 'The app will automatically scroll and capture the screen.',
+    guideStep4: 'When done, it switches to the <strong>[Analyze]</strong> tab to extract fan counts.',
+    btnStartCapture: 'Start Capture', btnStopCapture: '⏹ Stop Capture',
+    sectionProgress: 'Progress', progWaiting: 'Waiting...',
+    sectionDone: 'Done', captureComplete: '✓ Capture Complete',
+    btnOpenFolder: 'Open Folder', btnGoAnalyze: 'Go to Analyze →',
+    sectionGeminiApi: 'Gemini API', labelApiKey: 'API Key',
+    apiKeyHint: 'Get key: ', labelModel: 'Model',
+    modelFlash25: 'gemini-2.5-flash — Latest · Recommended (Free)',
+    modelFlash20: 'gemini-2.0-flash — Stable (Free)',
+    modelFlashLite: 'gemini-2.0-flash-lite — Most Affordable',
+    modelPro25: 'gemini-2.5-pro — Best Performance (Paid)',
+    sectionImage: 'Image',
+    dzText: 'Drag an image or ', dzSelectFile: 'Select File',
+    btnExtract: 'Extract',
+    dedupLabel: 'Remove consecutive duplicates (keep one if same number repeats)',
+    azPreparing: 'Preparing...', outputHeader: 'Results',
+    btnCopy: 'Copy', btnCopied: 'Copied ✓',
+    noResults: '(No results — "000 members" pattern not found in image)',
+    countFmt: (n, d) => d > 0 ? `${n} item(s) (${d} dup(s) removed)` : `${n} item(s)`,
+    sectionGame: 'Game', labelGameFolder: 'Game Installation Folder',
+    descGameFolder: 'Folder containing UMMS_Launcher.exe', btnBrowse: 'Browse',
+    labelScrollDelay: 'Scroll Delay (s)',
+    descScrollDelay: 'Wait time after scroll — increase for slow PCs',
+    labelScrollAmount: 'Scroll Amount', descScrollAmount: 'Lines to scroll at once',
+    labelDiffThreshold: 'Similarity Threshold (%)',
+    descDiffThreshold: 'Scroll end detected when similarity exceeds this value',
+    btnSaveSettings: 'Save Settings', toastSaved: '✓ Saved',
+    aboutVersion: 'Version', aboutCreator: 'Creator',
+    errNoApiKey: 'Please enter an API Key.',
+    errNoImage: 'Please upload an image first.',
+    errImageOnly: 'Only image files are supported.',
+    errPrefix: 'Error: ', errLaunchFail: 'Launch failed: ',
+    logCaptureComplete: 'Capture complete: ',
+    progStarting: 'Starting...', progDone: 'Done!', progError: 'Error occurred',
+    captureWarning: '⚠ Do not move the mouse while capturing.',
+    setupTitle: 'Initial Setup', setupDesc: 'Please fill in the information below before you start.',
+    setupLabelFolder: 'Game Installation Folder', setupDescFolder: 'Folder containing UMMS_Launcher.exe',
+    setupLabelApiKey: 'Gemini API Key', setupDescApiKey: 'Used for AI analysis. Can be changed in Settings later.',
+    setupConfirm: 'Get Started', setupFolderRequired: 'Please enter the game folder first.',
+    helpTitle: 'How to Get a Gemini API Key',
+    helpStep1: 'Visit <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>.',
+    helpStep2: 'Sign in with your Google account.',
+    helpStep3: 'Click <strong>[Create API Key]</strong>.',
+    helpStep4: 'Copy the generated key and paste it in the API Key field.',
+    helpNote: '※ Keys from AI Studio qualify for the free tier. Keys from Google Cloud Console do not.',
+    helpClose: 'Close',
+  },
+  ja: {
+    appName: 'ウマチェック',
+    tabCapture: 'キャプチャ', tabAnalyze: '分析', tabSettings: '設定',
+    gameChecking: 'ウマ娘の状態確認中...',
+    gameRunning: 'ウマ娘 起動中',
+    gameRunningDesc: 'サークル情報画面に移動し、キャプチャを開始してください。',
+    gameNotRunning: 'ウマ娘が起動していません',
+    gameNotRunningDesc: 'まずゲームを起動してください。',
+    gameStatusError: '状態確認エラー',
+    btnLaunchGame: '▶ ゲーム起動', btnLaunching: '起動中...',
+    sectionGuide: '使い方',
+    guideStep1: 'ゲームを起動し、<strong>サークルメニュー → サークル情報</strong>に移動してください。',
+    guideStep2: 'リストを<strong>一番上</strong>までスクロールしてから<strong>[キャプチャ開始]</strong>を押してください。',
+    guideStep3: 'アプリが自動でスクロールしながら画面をキャプチャします。',
+    guideStep4: '完了すると<strong>[分析]</strong>タブに自動移動してファン数を抽出します。',
+    btnStartCapture: 'キャプチャ開始', btnStopCapture: '⏹ キャプチャ中断',
+    sectionProgress: '進行状況', progWaiting: '待機中...',
+    sectionDone: '完了', captureComplete: '✓ キャプチャ完了',
+    btnOpenFolder: 'フォルダを開く', btnGoAnalyze: '分析タブへ →',
+    sectionGeminiApi: 'Gemini API', labelApiKey: 'API Key',
+    apiKeyHint: '発行: ', labelModel: 'モデル',
+    modelFlash25: 'gemini-2.5-flash — 最新・推奨 (無料)',
+    modelFlash20: 'gemini-2.0-flash — 安定 (無料)',
+    modelFlashLite: 'gemini-2.0-flash-lite — 最も低コスト',
+    modelPro25: 'gemini-2.5-pro — 最高性能 (有料)',
+    sectionImage: '画像',
+    dzText: '画像をドラッグまたは ', dzSelectFile: 'ファイルを選択',
+    btnExtract: '抽出',
+    dedupLabel: '連続重複を自動削除（同じ数字が連続する場合は1つだけ保持）',
+    azPreparing: '準備中...', outputHeader: '抽出結果',
+    btnCopy: 'コピー', btnCopied: 'コピー済み ✓',
+    noResults: '（結果なし — 画像内に「000人」のパターンが見つかりませんでした）',
+    countFmt: (n, d) => d > 0 ? `${n}件（連続重複${d}件削除）` : `${n}件`,
+    sectionGame: 'ゲーム', labelGameFolder: 'ゲームインストールフォルダ',
+    descGameFolder: 'UMMS_Launcher.exeがあるフォルダ', btnBrowse: '参照',
+    labelScrollDelay: 'スクロール間隔（秒）',
+    descScrollDelay: 'スクロール後の待機時間 — 低速PCは高めに設定',
+    labelScrollAmount: 'スクロール量', descScrollAmount: '一度にスクロールする行数',
+    labelDiffThreshold: '類似度閾値（%）',
+    descDiffThreshold: 'この値以上でスクロール終端と判断',
+    btnSaveSettings: '設定保存', toastSaved: '✓ 保存されました',
+    aboutVersion: 'バージョン', aboutCreator: '制作者',
+    errNoApiKey: 'API Keyを入力してください。',
+    errNoImage: 'まず画像をアップロードしてください。',
+    errImageOnly: '画像ファイルのみ対応しています。',
+    errPrefix: 'エラー: ', errLaunchFail: 'ゲーム起動失敗: ',
+    logCaptureComplete: 'キャプチャ完了: ',
+    progStarting: '開始中...', progDone: '完了！', progError: 'エラー発生',
+    captureWarning: '⚠ キャプチャ中はマウスを動かさないでください。',
+    setupTitle: '初期設定', setupDesc: '使用前に以下の情報を入力してください。',
+    setupLabelFolder: 'ゲームインストールフォルダ', setupDescFolder: 'UMMS_Launcher.exeがあるフォルダ',
+    setupLabelApiKey: 'Gemini API Key', setupDescApiKey: '画像分析に使用されます。後で設定タブから変更できます。',
+    setupConfirm: '始める', setupFolderRequired: 'まずゲームフォルダを入力してください。',
+    helpTitle: 'Gemini API Keyの取得方法',
+    helpStep1: '<a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>にアクセスしてください。',
+    helpStep2: 'Googleアカウントでログインしてください。',
+    helpStep3: '<strong>[APIキーの作成]</strong>ボタンをクリックしてください。',
+    helpStep4: '生成されたキーをコピーしてAPI Key欄に貼り付けてください。',
+    helpNote: '※ AI Studioで発行したキーは無料ティアが適用されます。Google Cloud Consoleのキーは無料ティアなし。',
+    helpClose: '閉じる',
+  },
+  zh: {
+    appName: '賽馬娘檢查',
+    tabCapture: '截圖', tabAnalyze: '分析', tabSettings: '設定',
+    gameChecking: '確認賽馬娘狀態中...',
+    gameRunning: '賽馬娘執行中',
+    gameRunningDesc: '請前往社團資訊畫面，然後開始截圖。',
+    gameNotRunning: '賽馬娘未執行',
+    gameNotRunningDesc: '請先啟動遊戲。',
+    gameStatusError: '狀態確認錯誤',
+    btnLaunchGame: '▶ 啟動遊戲', btnLaunching: '啟動中...',
+    sectionGuide: '使用方法',
+    guideStep1: '啟動遊戲並前往<strong>社團選單 → 社團資訊</strong>。',
+    guideStep2: '將列表捲動到<strong>最頂端</strong>，然後點擊<strong>[開始截圖]</strong>。',
+    guideStep3: '應用程式將自動捲動並截取畫面。',
+    guideStep4: '完成後將自動切換到<strong>[分析]</strong>頁籤以提取粉絲數。',
+    btnStartCapture: '開始截圖', btnStopCapture: '⏹ 停止截圖',
+    sectionProgress: '進度', progWaiting: '等待中...',
+    sectionDone: '完成', captureComplete: '✓ 截圖完成',
+    btnOpenFolder: '開啟資料夾', btnGoAnalyze: '前往分析 →',
+    sectionGeminiApi: 'Gemini API', labelApiKey: 'API Key',
+    apiKeyHint: '取得金鑰: ', labelModel: '模型',
+    modelFlash25: 'gemini-2.5-flash — 最新·推薦 (免費)',
+    modelFlash20: 'gemini-2.0-flash — 穩定 (免費)',
+    modelFlashLite: 'gemini-2.0-flash-lite — 最低成本',
+    modelPro25: 'gemini-2.5-pro — 最高性能 (付費)',
+    sectionImage: '圖片',
+    dzText: '拖曳圖片或 ', dzSelectFile: '選擇檔案',
+    btnExtract: '提取',
+    dedupLabel: '自動移除連續重複（相同數字連續出現時只保留一個）',
+    azPreparing: '準備中...', outputHeader: '提取結果',
+    btnCopy: '複製', btnCopied: '已複製 ✓',
+    noResults: '（無結果 — 圖片中未找到「000人」的格式）',
+    countFmt: (n, d) => d > 0 ? `${n}個（移除連續重複${d}個）` : `${n}個`,
+    sectionGame: '遊戲', labelGameFolder: '遊戲安裝資料夾',
+    descGameFolder: '包含 UMMS_Launcher.exe 的資料夾', btnBrowse: '瀏覽',
+    labelScrollDelay: '捲動間隔（秒）',
+    descScrollDelay: '捲動後的等待時間 — 慢速電腦請調高',
+    labelScrollAmount: '捲動量', descScrollAmount: '每次捲動的行數',
+    labelDiffThreshold: '相似度閾值（%）',
+    descDiffThreshold: '相似度達到此值時判斷為捲動結束',
+    btnSaveSettings: '儲存設定', toastSaved: '✓ 已儲存',
+    aboutVersion: '版本', aboutCreator: '製作者',
+    errNoApiKey: '請輸入 API Key。',
+    errNoImage: '請先上傳圖片。',
+    errImageOnly: '僅支援圖片檔案。',
+    errPrefix: '錯誤: ', errLaunchFail: '遊戲啟動失敗: ',
+    logCaptureComplete: '截圖完成: ',
+    progStarting: '開始中...', progDone: '完成！', progError: '發生錯誤',
+    captureWarning: '⚠ 截圖期間請勿移動滑鼠。',
+    setupTitle: '初始設定', setupDesc: '使用前請填寫以下資訊。',
+    setupLabelFolder: '遊戲安裝資料夾', setupDescFolder: '包含 UMMS_Launcher.exe 的資料夾',
+    setupLabelApiKey: 'Gemini API Key', setupDescApiKey: '用於 AI 分析。稍後可在設定頁籤中更改。',
+    setupConfirm: '開始使用', setupFolderRequired: '請先輸入遊戲資料夾。',
+    helpTitle: '如何取得 Gemini API Key',
+    helpStep1: '前往 <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>。',
+    helpStep2: '以 Google 帳號登入。',
+    helpStep3: '點擊 <strong>[建立 API 金鑰]</strong> 按鈕。',
+    helpStep4: '複製產生的金鑰並貼入 API Key 欄位。',
+    helpNote: '※ 使用 AI Studio 發行的金鑰可享受免費額度。Google Cloud Console 的金鑰不享免費額度。',
+    helpClose: '關閉',
+  },
+};
+
+let currentLang = 'ko';
+function t(key) { return i18n[currentLang]?.[key] ?? i18n.ko[key] ?? key; }
+
+function applyLang() {
+  document.documentElement.lang = currentLang === 'zh' ? 'zh-TW' : currentLang;
+
+  document.getElementById('logo-name').textContent        = t('appName');
+  document.getElementById('about-app-name').textContent   = t('appName');
+  document.getElementById('tab-btn-capture').textContent  = t('tabCapture');
+  document.getElementById('tab-btn-analyze').textContent  = t('tabAnalyze');
+  document.getElementById('tab-btn-settings').textContent = t('tabSettings');
+
+  // 캡처 탭
+  document.getElementById('section-guide').textContent           = t('sectionGuide');
+  document.getElementById('guide-step1').innerHTML               = t('guideStep1');
+  document.getElementById('guide-step2').innerHTML               = t('guideStep2');
+  document.getElementById('guide-step3').innerHTML               = t('guideStep3');
+  document.getElementById('guide-step4').innerHTML               = t('guideStep4');
+  document.getElementById('section-progress').textContent        = t('sectionProgress');
+  document.getElementById('section-done').textContent            = t('sectionDone');
+  document.getElementById('capture-complete-label').textContent  = t('captureComplete');
+  document.getElementById('open-folder-btn').textContent         = t('btnOpenFolder');
+  document.getElementById('go-analyze-btn').textContent          = t('btnGoAnalyze');
+  document.getElementById('capture-warn-msg').textContent        = t('captureWarning');
+  if (!capturing) {
+    document.getElementById('start-btn').textContent   = t('btnStartCapture');
+    document.getElementById('launch-btn').textContent  = t('btnLaunchGame');
+    document.getElementById('prog-label').textContent  = t('progWaiting');
+  }
+
+  // 분석 탭
+  document.getElementById('section-gemini').textContent      = t('sectionGeminiApi');
+  document.getElementById('label-apikey').textContent        = t('labelApiKey');
+  document.getElementById('apikey-hint').textContent         = t('apiKeyHint');
+  document.getElementById('label-model').textContent         = t('labelModel');
+  document.getElementById('model-opt-flash25').textContent   = t('modelFlash25');
+  document.getElementById('model-opt-flash20').textContent   = t('modelFlash20');
+  document.getElementById('model-opt-flashlite').textContent = t('modelFlashLite');
+  document.getElementById('model-opt-pro25').textContent     = t('modelPro25');
+  document.getElementById('section-image').textContent       = t('sectionImage');
+  document.getElementById('extract-btn').textContent         = t('btnExtract');
+  document.getElementById('dedup-label').textContent         = t('dedupLabel');
+  document.getElementById('az-prog-text').textContent        = t('azPreparing');
+  document.getElementById('output-header-text').textContent  = t('outputHeader');
+  document.getElementById('copy-btn').textContent            = t('btnCopy');
+  document.getElementById('dz-text-wrap').innerHTML =
+    t('dzText') + `<strong onclick="document.getElementById('file-input').click()">${t('dzSelectFile')}</strong>`;
+
+  // 설정 탭
+  document.getElementById('section-game').textContent          = t('sectionGame');
+  document.getElementById('label-game-folder').textContent     = t('labelGameFolder');
+  document.getElementById('desc-game-folder').textContent      = t('descGameFolder');
+  document.getElementById('browse-btn').textContent            = t('btnBrowse');
+  document.getElementById('label-scroll-delay').textContent    = t('labelScrollDelay');
+  document.getElementById('desc-scroll-delay').textContent     = t('descScrollDelay');
+  document.getElementById('label-scroll-amount').textContent   = t('labelScrollAmount');
+  document.getElementById('desc-scroll-amount').textContent    = t('descScrollAmount');
+  document.getElementById('label-diff-threshold').textContent  = t('labelDiffThreshold');
+  document.getElementById('desc-diff-threshold').textContent   = t('descDiffThreshold');
+  document.getElementById('save-settings-btn').textContent     = t('btnSaveSettings');
+
+  // About 모달
+  document.getElementById('about-version-label').textContent = t('aboutVersion');
+  document.getElementById('about-creator-label').textContent = t('aboutCreator');
+
+  // 초기 설정 모달
+  document.getElementById('setup-title').textContent           = t('setupTitle');
+  document.getElementById('setup-desc').textContent            = t('setupDesc');
+  document.getElementById('setup-label-folder').textContent    = t('setupLabelFolder');
+  document.getElementById('setup-desc-folder').textContent     = t('setupDescFolder');
+  document.getElementById('setup-label-apikey-text').textContent = t('setupLabelApiKey');
+  document.getElementById('setup-desc-apikey').textContent     = t('setupDescApiKey');
+  document.getElementById('setup-confirm-btn').textContent     = t('setupConfirm');
+  document.getElementById('setup-browse-btn').textContent      = t('btnBrowse');
+
+  // API Key 도움말 모달
+  document.getElementById('help-modal-title').textContent      = t('helpTitle');
+  document.getElementById('help-step1').innerHTML              = t('helpStep1');
+  document.getElementById('help-step2').innerHTML              = t('helpStep2');
+  document.getElementById('help-step3').innerHTML              = t('helpStep3');
+  document.getElementById('help-step4').textContent            = t('helpStep4');
+  document.getElementById('help-note').textContent             = t('helpNote');
+  document.getElementById('apikey-help-close-btn').textContent = t('helpClose');
+
+  // 언어 옵션 active 표시
+  document.querySelectorAll('.lang-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === currentLang);
+  });
+}
+
+
+/* ════════════════════════════════════════
+   탭 전환
+════════════════════════════════════════ */
+const tabBtns   = document.querySelectorAll('.tab-btn');
+const tabPanels = document.querySelectorAll('.tab-panel');
+
+function switchTab(name) {
+  tabBtns.forEach(b   => b.classList.toggle('active', b.dataset.tab === name));
+  tabPanels.forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+}
+tabBtns.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+
+/* ════════════════════════════════════════
+   언어 피커
+════════════════════════════════════════ */
+const langBtn      = document.getElementById('lang-btn');
+const langDropdown = document.getElementById('lang-dropdown');
+
+langBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const opening = !langDropdown.classList.contains('open');
+  langDropdown.classList.toggle('open', opening);
+  langBtn.classList.toggle('open', opening);
+});
+
+document.addEventListener('click', () => {
+  langDropdown.classList.remove('open');
+  langBtn.classList.remove('open');
+});
+langDropdown.addEventListener('click', e => e.stopPropagation());
+
+document.querySelectorAll('.lang-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentLang = btn.dataset.lang;
+    localStorage.setItem('uma_lang', currentLang);
+    if (window.pywebview?.api) pywebview.api.save_config({ lang: currentLang });
+    langDropdown.classList.remove('open');
+    langBtn.classList.remove('open');
+    applyLang();
+  });
+});
+
+
+/* ════════════════════════════════════════
+   초기화
+════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  // 저장된 언어가 있으면 즉시 적용 (pywebview 대기 전)
+  const saved = localStorage.getItem('uma_lang');
+  if (saved && i18n[saved]) {
+    currentLang = saved;
+  }
+  applyLang();
+
+  const timer = setInterval(() => {
+    if (window.pywebview?.api) {
+      clearInterval(timer);
+      initApp();
+    }
+  }, 100);
+});
+
+async function initApp() {
+  // 로고
+  try {
+    const iconUrl = await pywebview.api.get_icon_url();
+    document.getElementById('logo-img').src       = iconUrl;
+    document.getElementById('about-logo-img').src = iconUrl;
+    document.getElementById('setup-logo-img').src = iconUrl;
+  } catch(_) {}
+
+  await loadSettings();
+
+  // 첫 실행 감지 → 초기 설정 모달
+  try {
+    const hasConfig = await pywebview.api.has_config();
+    if (!hasConfig) showSetupModal();
+  } catch(_) {}
+
+  checkGameStatus();
+  setInterval(checkGameStatus, 3000);
+}
+
+
+/* ════════════════════════════════════════
+   설정
+════════════════════════════════════════ */
+async function loadSettings() {
+  const cfg = await pywebview.api.get_config();
+  if (cfg.game_folder)    document.getElementById('game-folder').value    = cfg.game_folder;
+  if (cfg.scroll_delay)   document.getElementById('scroll-delay').value   = cfg.scroll_delay;
+  if (cfg.scroll_amount)  document.getElementById('scroll-amount').value  = cfg.scroll_amount;
+  if (cfg.diff_threshold) document.getElementById('diff-threshold').value = (cfg.diff_threshold * 100).toFixed(1);
+  if (cfg.gemini_api_key) apiKeyInput.value  = cfg.gemini_api_key;
+  if (cfg.gemini_model)   modelSelect.value  = cfg.gemini_model;
+
+  // 언어: config.json > localStorage > Windows 시스템 감지 순
+  if (cfg.lang && i18n[cfg.lang]) {
+    currentLang = cfg.lang;
+    localStorage.setItem('uma_lang', currentLang);
+    applyLang();
+  } else if (!localStorage.getItem('uma_lang')) {
+    try {
+      const winLang = await pywebview.api.get_windows_lang();
+      if (i18n[winLang]) currentLang = winLang;
+    } catch(_) {}
+    applyLang();
+  }
+}
+
+document.getElementById('save-settings-btn').addEventListener('click', async () => {
+  await pywebview.api.save_config({
+    game_folder:    document.getElementById('game-folder').value.trim(),
+    scroll_delay:   parseFloat(document.getElementById('scroll-delay').value),
+    scroll_amount:  parseInt(document.getElementById('scroll-amount').value),
+    diff_threshold: parseFloat(document.getElementById('diff-threshold').value) / 100,
+  });
+  const toast = document.getElementById('save-toast');
+  toast.textContent = t('toastSaved');
+  toast.style.display = 'inline';
+  setTimeout(() => { toast.style.display = 'none'; }, 2500);
+});
+
+document.getElementById('browse-btn').addEventListener('click', async () => {
+  const folder = await pywebview.api.browse_folder();
+  if (folder) document.getElementById('game-folder').value = folder;
+});
+
+
+/* ════════════════════════════════════════
+   게임 상태 + 실행
+════════════════════════════════════════ */
+const gameDot   = document.getElementById('game-dot');
+const gameTitle = document.getElementById('game-title');
+const gameDesc  = document.getElementById('game-desc');
+const startBtn  = document.getElementById('start-btn');
+const launchBtn = document.getElementById('launch-btn');
+
+async function checkGameStatus() {
+  if (!window.pywebview?.api) return;
+  try {
+    const running = await pywebview.api.is_game_running();
+    if (running) {
+      gameDot.className       = 'status-dot running';
+      gameTitle.textContent   = t('gameRunning');
+      gameDesc.textContent    = t('gameRunningDesc');
+      startBtn.disabled       = false;
+      launchBtn.style.display = 'none';
+    } else {
+      gameDot.className       = 'status-dot warn';
+      gameTitle.textContent   = t('gameNotRunning');
+      gameDesc.textContent    = t('gameNotRunningDesc');
+      startBtn.disabled       = true;
+      launchBtn.style.display = '';
+    }
+  } catch(e) {
+    gameDot.className     = 'status-dot error';
+    gameTitle.textContent = t('gameStatusError');
+    gameDesc.textContent  = String(e);
+  }
+}
+
+launchBtn.addEventListener('click', async () => {
+  launchBtn.disabled    = true;
+  launchBtn.textContent = t('btnLaunching');
+  const result = await pywebview.api.launch_game();
+  if (result !== 'ok') {
+    addLog(t('errLaunchFail') + result, 'err');
+    document.getElementById('progress-section').style.display = 'block';
+  }
+  setTimeout(() => {
+    launchBtn.disabled    = false;
+    launchBtn.textContent = t('btnLaunchGame');
+  }, 3000);
+});
+
+
+/* ════════════════════════════════════════
+   캡처 제어
+════════════════════════════════════════ */
+let capturing   = false;
+let lastImgPath = null;
+
+startBtn.addEventListener('click', async () => {
+  if (capturing) {
+    await pywebview.api.stop_capture();
+    capturing            = false;
+    startBtn.textContent = t('btnStartCapture');
+    startBtn.className   = 'btn btn-primary';
+    return;
+  }
+  capturing            = true;
+  startBtn.textContent = t('btnStopCapture');
+  startBtn.className   = 'btn btn-danger';
+
+  document.getElementById('capture-warn-msg').style.display = 'block';
+  document.getElementById('progress-section').style.display = 'block';
+  document.getElementById('result-section').style.display   = 'none';
+  document.getElementById('log-box').innerHTML = '';
+  setProgress(0, t('progStarting'));
+
+  pollStatus();
+  await pywebview.api.start_capture();
+});
+
+async function pollStatus() {
+  if (!capturing) return;
+  try {
+    const ev = await pywebview.api.poll_event();
+    if (ev) {
+      if (ev.type === 'status')        { addLog(ev.msg); }
+      else if (ev.type === 'progress') { setProgress(ev.pct, ev.msg || ''); }
+      else if (ev.type === 'done')     { captureDone(ev.path); return; }
+      else if (ev.type === 'error')    { captureError(ev.msg); return; }
+    }
+  } catch(_) {}
+  setTimeout(pollStatus, 300);
+}
+
+function setProgress(pct, label) {
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+  if (label) document.getElementById('prog-label').textContent = label;
+}
+
+function addLog(msg, cls = 'info') {
+  const box  = document.getElementById('log-box');
+  const line = document.createElement('div');
+  line.className   = 'log-' + cls;
+  line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+  document.getElementById('progress-section').style.display = 'block';
+}
+
+function captureDone(path) {
+  capturing            = false;
+  lastImgPath          = path;
+  startBtn.textContent = t('btnStartCapture');
+  startBtn.className   = 'btn btn-primary';
+  document.getElementById('capture-warn-msg').style.display = 'none';
+  setProgress(100, t('progDone'));
+  addLog(t('logCaptureComplete') + path, 'ok');
+  document.getElementById('result-section').style.display = 'block';
+  document.getElementById('result-path').textContent      = path;
+  pywebview.api.focus_window();   // 게임 창에서 앱 창으로 포커스 전환
+  setTimeout(async () => {
+    switchTab('analyze');
+    if (path) {
+      await loadImageToAnalyzer(path);
+      if (apiKeyInput.value.trim()) await runExtract();
+    }
+  }, 3000);
+}
+
+function captureError(msg) {
+  capturing            = false;
+  startBtn.textContent = t('btnStartCapture');
+  startBtn.className   = 'btn btn-primary';
+  document.getElementById('capture-warn-msg').style.display = 'none';
+  addLog(t('errPrefix') + msg, 'err');
+  setProgress(0, t('progError'));
+}
+
+document.getElementById('open-folder-btn').addEventListener('click', async () => {
+  if (lastImgPath) await pywebview.api.open_folder(lastImgPath);
+});
+
+document.getElementById('go-analyze-btn').addEventListener('click', async () => {
+  switchTab('analyze');
+  if (lastImgPath) await loadImageToAnalyzer(lastImgPath);
+});
+
+async function loadImageToAnalyzer(filePath) {
+  try {
+    const b64 = await pywebview.api.read_image_base64(filePath);
+    injectImage('image/png', b64);
+  } catch(e) { console.error(e); }
+}
+
+
+/* ════════════════════════════════════════
+   분석 탭 — 이미지 처리
+════════════════════════════════════════ */
+const dropZone   = document.getElementById('drop-zone');
+const fileInput  = document.getElementById('file-input');
+const prevWrap   = document.getElementById('preview-wrap');
+const prevImg    = document.getElementById('preview-img');
+const extractBtn = document.getElementById('extract-btn');
+
+let imgBase64 = null, imgMime = null;
+
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',      e => { e.preventDefault(); dropZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change',   () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+document.getElementById('clear-img-btn').addEventListener('click', () => {
+  imgBase64 = imgMime          = null;
+  prevWrap.style.display       = 'none';
+  dropZone.style.display       = 'block';
+  fileInput.value              = '';
+  extractBtn.disabled          = true;
+  hideOutput(); clearAzStatus();
+});
+
+function loadFile(file) {
+  if (!file.type.startsWith('image/')) { showAzStatus(t('errImageOnly'), true); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const url = e.target.result;
+    const m   = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
+    if (m) { imgMime = m[1]; imgBase64 = m[2]; }
+    injectImage(imgMime, imgBase64);
+  };
+  reader.readAsDataURL(file);
+}
+
+function injectImage(mime, b64) {
+  imgMime = mime; imgBase64 = b64;
+  prevImg.src            = `data:${mime};base64,${b64}`;
+  prevWrap.style.display = 'block';
+  dropZone.style.display = 'none';
+  extractBtn.disabled    = false;
+  hideOutput(); clearAzStatus();
+}
+
+
+/* ════════════════════════════════════════
+   분석 탭 — API Key / 토글
+════════════════════════════════════════ */
+const apiKeyInput = document.getElementById('api-key');
+const togglePw    = document.getElementById('toggle-pw');
+const modelSelect = document.getElementById('model-select');
+const dedupCheck  = document.getElementById('dedup-check');
+
+apiKeyInput.addEventListener('change', () => pywebview.api.save_config({ gemini_api_key: apiKeyInput.value }));
+modelSelect.addEventListener('change', () => pywebview.api.save_config({ gemini_model: modelSelect.value }));
+
+togglePw.addEventListener('click', () => {
+  const hide       = apiKeyInput.type === 'password';
+  apiKeyInput.type = hide ? 'text' : 'password';
+  togglePw.textContent = hide ? '🙈' : '👁';
+});
+
+
+/* ════════════════════════════════════════
+   분석 탭 — Extract
+════════════════════════════════════════ */
+extractBtn.addEventListener('click', async () => {
+  const key = apiKeyInput.value.trim();
+  if (!key)       { showAzStatus(t('errNoApiKey'), true); return; }
+  if (!imgBase64) { showAzStatus(t('errNoImage'),  true); return; }
+  await runExtract();
+});
+
+async function runExtract() {
+  extractBtn.disabled = true;
+  hideOutput(); clearAzStatus();
+  showAzProgress(true);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById('az-progress-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }));
+
+  try {
+    const nums = await extractWithGemini(apiKeyInput.value.trim(), modelSelect.value, imgBase64, imgMime);
+    showAzProgress(false);
+    showOutput(nums);
+  } catch(err) {
+    showAzProgress(false);
+    showAzStatus(t('errPrefix') + err.message, true);
+  } finally {
+    extractBtn.disabled = false;
+  }
+}
+
+async function extractWithGemini(apiKey, model, base64, mime) {
+  const prompt = `이 이미지에서 "숫자+명" 형태의 텍스트를 모두 찾으세요.
+예: "150명", "1,234명", "32명" 등.
+
+규칙:
+- 숫자 부분만 추출하세요 (쉼표, 공백 제거하여 순수 정수로).
+- 한 줄에 숫자 하나씩, 오직 숫자만 출력하세요.
+- 이미지에 등장하는 순서대로 나열하세요.
+- 이미지에 해당 패턴이 없으면 "없음"이라고만 출력하세요.
+- 설명, 머리말, 꼬리말 없이 숫자 목록만 출력하세요.`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: mime, data: base64 } }] }],
+        generationConfig: { temperature: 0 }
+      })
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    let msg = err?.error?.message || `HTTP ${res.status}`;
+    if (msg.includes('free_tier') || (msg.includes('quota') && msg.includes('limit: 0')))
+      msg = 'AI Studio에서 발급한 키를 사용해야 무료 티어가 적용됩니다.';
+    else if (msg.includes('API_KEY_INVALID') || msg.includes('API key not valid'))
+      msg = 'API Key가 올바르지 않습니다.';
+    else if (msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED'))
+      msg = '일일 요청 한도 초과. 다른 모델을 선택하거나 내일 다시 시도하세요.';
+    else if (msg.includes('not found') || msg.includes('404'))
+      msg = `모델 "${model}"을 찾을 수 없습니다.`;
+    throw new Error(msg);
+  }
+
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  return parseNumbers(text.trim());
+}
+
+function parseNumbers(raw) {
+  if (!raw || raw.trim() === '없음') return [];
+  return raw.split('\n').map(l => l.trim().replace(/,/g, '')).filter(l => /^\d+$/.test(l));
+}
+
+
+/* ════════════════════════════════════════
+   분석 탭 — UI 헬퍼
+════════════════════════════════════════ */
+function showAzProgress(show) {
+  document.getElementById('az-progress-wrap').style.display = show ? 'flex' : 'none';
+}
+
+function showAzStatus(msg, isError) {
+  const el = document.getElementById('az-status');
+  el.textContent   = msg;
+  el.className     = isError ? 'error' : '';
+  el.style.display = 'block';
+}
+
+function clearAzStatus() { document.getElementById('az-status').style.display = 'none'; }
+
+function showOutput(numbers) {
+  const wrap  = document.getElementById('output-wrap');
+  const box   = document.getElementById('output-box');
+  const badge = document.getElementById('count-badge');
+  wrap.style.display = 'block';
+
+  if (!numbers.length) {
+    box.textContent   = t('noResults');
+    box.style.color   = 'var(--muted)';
+    badge.textContent = '';
+    return;
+  }
+
+  let displayed = numbers, removed = 0;
+  if (dedupCheck.checked) {
+    displayed = numbers.filter((v, i) => i === 0 || v !== numbers[i - 1]);
+    removed   = numbers.length - displayed.length;
+  }
+
+  box.textContent   = displayed.join('\n');
+  box.style.color   = 'var(--success-dim)';
+  badge.textContent = i18n[currentLang].countFmt(displayed.length, removed);
+
+  // 자동 복사 (Python clip.exe 사용 — pywebview 권한 우회)
+  pywebview.api.copy_to_clipboard(displayed.join('\n')).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = t('btnCopied');
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = t('btnCopy'); btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {});
+
+  // 자동 스크롤 (탭 패널 끝까지) — 레이아웃 반영 후 실행
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const panel = document.getElementById('tab-analyze');
+    panel.scrollTo({ top: panel.scrollHeight, behavior: 'smooth' });
+  }));
+}
+
+function hideOutput() {
+  document.getElementById('output-wrap').style.display = 'none';
+  document.getElementById('output-box').textContent    = '';
+  document.getElementById('count-badge').textContent   = '';
+}
+
+
+/* ════════════════════════════════════════
+   초기 설정 모달
+════════════════════════════════════════ */
+function showSetupModal() {
+  const defaultFolder = document.getElementById('game-folder').value;
+  if (defaultFolder) document.getElementById('setup-folder').value = defaultFolder;
+  document.getElementById('setup-modal').classList.add('open');
+}
+
+document.getElementById('setup-browse-btn').addEventListener('click', async () => {
+  const folder = await pywebview.api.browse_folder();
+  if (folder) document.getElementById('setup-folder').value = folder;
+});
+
+document.getElementById('setup-toggle-pw').addEventListener('click', () => {
+  const inp  = document.getElementById('setup-apikey');
+  const hide = inp.type === 'password';
+  inp.type = hide ? 'text' : 'password';
+  document.getElementById('setup-toggle-pw').textContent = hide ? '🙈' : '👁';
+});
+
+document.getElementById('setup-confirm-btn').addEventListener('click', async () => {
+  const folder = document.getElementById('setup-folder').value.trim();
+  const errEl  = document.getElementById('setup-folder-error');
+  if (!folder) {
+    errEl.textContent    = t('setupFolderRequired');
+    errEl.style.display  = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const apiKey = document.getElementById('setup-apikey').value.trim();
+  const cfg    = { game_folder: folder };
+  if (apiKey) cfg.gemini_api_key = apiKey;
+  await pywebview.api.save_config(cfg);
+
+  // 메인 UI에 반영
+  document.getElementById('game-folder').value = folder;
+  if (apiKey) apiKeyInput.value = apiKey;
+
+  document.getElementById('setup-modal').classList.remove('open');
+});
+
+
+/* ════════════════════════════════════════
+   API Key 도움말 모달
+════════════════════════════════════════ */
+const apikeyHelpModal = document.getElementById('apikey-help-modal');
+
+document.getElementById('apikey-help-btn').addEventListener('click', () => {
+  apikeyHelpModal.classList.add('open');
+});
+document.getElementById('apikey-help-close').addEventListener('click', () => {
+  apikeyHelpModal.classList.remove('open');
+});
+document.getElementById('apikey-help-close-btn').addEventListener('click', () => {
+  apikeyHelpModal.classList.remove('open');
+});
+apikeyHelpModal.addEventListener('click', e => {
+  if (e.target === apikeyHelpModal) apikeyHelpModal.classList.remove('open');
+});
+
+
+/* ════════════════════════════════════════
+   About 모달
+════════════════════════════════════════ */
+const aboutModal = document.getElementById('about-modal');
+document.getElementById('about-btn').addEventListener('click',   () => aboutModal.classList.add('open'));
+document.getElementById('about-close').addEventListener('click', () => aboutModal.classList.remove('open'));
+aboutModal.addEventListener('click', e => { if (e.target === aboutModal) aboutModal.classList.remove('open'); });
+
+
+/* ════════════════════════════════════════
+   복사 버튼
+════════════════════════════════════════ */
+document.getElementById('copy-btn').addEventListener('click', () => {
+  const text = document.getElementById('output-box').textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = t('btnCopied');
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = t('btnCopy'); btn.classList.remove('copied'); }, 2000);
+  });
+});
+</script>
+</body>
+</html>
