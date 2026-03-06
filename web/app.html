@@ -977,6 +977,13 @@ const i18n = {
 
 let currentLang = 'ko';
 function t(key) { return i18n[currentLang]?.[key] ?? i18n.ko[key] ?? key; }
+function hasApiMethod(name) {
+  return typeof window.pywebview?.api?.[name] === 'function';
+}
+function isApiReady() {
+  const required = ['get_icon_url', 'get_config', 'has_config', 'is_game_running'];
+  return required.every(hasApiMethod);
+}
 
 function applyLang() {
   document.documentElement.lang = currentLang === 'zh' ? 'zh-TW' : currentLang;
@@ -1110,7 +1117,7 @@ document.querySelectorAll('.lang-option').forEach(btn => {
   btn.addEventListener('click', () => {
     currentLang = btn.dataset.lang;
     localStorage.setItem('uma_lang', currentLang);
-    if (window.pywebview?.api) pywebview.api.save_config({ lang: currentLang });
+    if (hasApiMethod('save_config')) pywebview.api.save_config({ lang: currentLang });
     langDropdown.classList.remove('open');
     langBtn.classList.remove('open');
     applyLang();
@@ -1130,7 +1137,7 @@ window.addEventListener('load', () => {
   applyLang();
 
   const timer = setInterval(() => {
-    if (window.pywebview?.api) {
+    if (isApiReady()) {
       clearInterval(timer);
       initApp();
     }
@@ -1146,7 +1153,9 @@ async function initApp() {
     document.getElementById('setup-logo-img').src = iconUrl;
   } catch(_) {}
 
-  await loadSettings();
+  try {
+    await loadSettings();
+  } catch(_) {}
 
   // 첫 실행 감지 → 초기 설정 모달
   try {
@@ -1214,7 +1223,7 @@ const startBtn  = document.getElementById('start-btn');
 const launchBtn = document.getElementById('launch-btn');
 
 async function checkGameStatus() {
-  if (!window.pywebview?.api) return;
+  if (!hasApiMethod('is_game_running')) return;
   try {
     const running = await pywebview.api.is_game_running();
     if (running) {

@@ -18,3 +18,11 @@ config.json
 
 # Local tool metadata
 .claude/
+
+# Build artifacts
+build/
+dist/
+dist-installer/
+*.spec
+icon.ico
+.tools/

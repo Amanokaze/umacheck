@@ -1,5 +1,5 @@
 """
-main.py - uma-fancheck 메인 진입점
+main.py - UmaCheck 메인 진입점
 pywebview 기반 Windows 데스크탑 앱
 """
 import os
@@ -13,6 +13,7 @@ import ctypes
 import webview
 
 # ── 경로 설정 ──────────────────────────────────────────────────────────────
+APP_TITLE = "UmaCheck"
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 WEB_DIR   = os.path.join(BASE_DIR, "web")
 ICON_PATH = os.path.join(BASE_DIR, "icon.png")
@@ -174,7 +175,7 @@ class Api:
     def focus_window(self) -> None:
         try:
             import win32gui, win32con, win32api, win32process
-            hwnd = win32gui.FindWindow(None, "uma-fancheck")
+            hwnd = win32gui.FindWindow(None, APP_TITLE)
             if not hwnd:
                 return
             fg = win32gui.GetForegroundWindow()
@@ -217,7 +218,7 @@ def main():
     app_html = os.path.join(WEB_DIR, "app.html")
 
     window = webview.create_window(
-        title="uma-fancheck",
+        title=APP_TITLE,
         url=app_html,
         js_api=api,
         width=760,
