@@ -1,6 +1,8 @@
-pywebview>=5.0
-pyautogui>=0.9
-Pillow>=10.0
-pywin32>=306
-numpy>=1.24
-psutil>=5.9
+pywebview==6.1
+pythonnet==3.0.5
+clr_loader==0.2.10
+pyautogui==0.9.54
+Pillow==12.1.1
+pywin32==311
+numpy==2.4.2
+psutil==7.2.2

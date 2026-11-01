@@ -20,6 +20,8 @@ APP_TITLE = "UmaCheck"
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 WEB_DIR   = os.path.join(BASE_DIR, "web")
 ICON_PATH = os.path.join(BASE_DIR, "icon.png")
+# 창 아이콘: Windows(System.Drawing.Icon)는 .ico 만 읽을 수 있음 (png 전달 시 시작 직후 강제 종료)
+ICON_ICO  = os.path.join(BASE_DIR, "icon.ico")
 CFG_PATH  = os.path.join(BASE_DIR, "config.json")
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
@@ -292,7 +294,7 @@ def main():
 
     webview.start(
         debug=("--debug" in sys.argv),
-        icon=ICON_PATH if os.path.exists(ICON_PATH) else None,
+        icon=ICON_ICO if os.path.exists(ICON_ICO) else None,
         storage_path=os.path.join(BASE_DIR, ".webview_data"),
     )
 

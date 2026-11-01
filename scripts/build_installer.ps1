@@ -48,6 +48,7 @@ python -m PyInstaller `
   --icon icon.ico `
   --add-data "web;web" `
   --add-data "icon.png;." `
+  --add-data "icon.ico;." `
   --add-data "LICENSE;." `
   main.py
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller build failed" }
