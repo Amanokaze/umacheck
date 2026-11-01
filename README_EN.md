@@ -2,7 +2,7 @@
 
 A Windows desktop app that automatically captures the fan count list of Uma Musume circle members and extracts the numbers using Gemini AI.
 
-> Creator: 선두의경치 (Korean Server) · v0.2.0
+> Creator: 선두의경치 (Korean Server) · v0.2.1
 
 **Other languages:** [한국어](README.md) · [日本語](README_JA.md) · [繁體中文](README_ZH.md)
 
