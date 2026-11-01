@@ -2,7 +2,7 @@
 
 自動截圖賽馬娘圈子成員的粉絲數列表，並使用 Gemini AI 擷取數值的 Windows 桌面應用程式。
 
-> 製作者: 선두의경치 (韓國伺服器) · v0.1.1
+> 製作者: 선두의경치 (韓國伺服器) · v0.2.0
 
 **其他語言:** [한국어](README.md) · [English](README_EN.md) · [日本語](README_JA.md)
 
@@ -31,6 +31,7 @@
 
 ### 其他
 - 可直接從應用程式啟動遊戲
+- 自動檢查新版本並於應用程式內更新
 - 多語言支援：한국어 / English / 日本語 / 繁體中文
 
 ---
@@ -38,13 +39,23 @@
 ## 系統需求
 
 - **作業系統:** Windows 10 / 11
-- **Python:** 3.12 以上
+- **Python:** 3.12 以上（僅從原始碼執行時需要）
 - **遊戲:** 賽馬娘 Pretty Derby（KakaoGames 韓國伺服器）
 - **Gemini API Key:** 至 [Google AI Studio](https://aistudio.google.com/apikey) 免費取得
 
 ---
 
 ## 安裝與執行
+
+### 使用安裝程式安裝（一般使用者）
+
+1. 從 [Releases 頁面](https://github.com/Amanokaze/umacheck/releases/latest) 下載 `UmaCheck-Setup-vX.Y.Z.exe`。
+2. 執行安裝程式。若已安裝舊版本會直接覆蓋，設定與 API Key 會保留。
+3. 從開始選單或桌面的 **UmaCheck** 啟動。
+
+自 v0.2.0 起，應用程式啟動時會自動檢查新版本。在更新視窗中按下 **[更新]** 即可下載並安裝新版本，完成後應用程式會重新啟動。也可以在資訊 (i) 視窗中按 **[檢查更新]** 手動檢查。
+
+### 從原始碼執行（開發者）
 
 ```bash
 # 安裝相依套件
@@ -123,11 +134,33 @@ uma-fancheck-app/
 ├── icon.png         # 應用程式圖示
 ├── src/
 │   ├── capture.py   # 遊戲視窗偵測與自動截圖
-│   └── stitch.py    # 重疊去除與圖片合成
+│   ├── stitch.py    # 重疊去除與圖片合成
+│   ├── updater.py   # 透過 GitHub Releases 檢查與安裝更新
+│   └── version.py   # 應用程式版本（集中管理）
 ├── web/
 │   └── app.html     # 應用程式 UI（HTML/CSS/JS）
+├── installer/
+│   └── umacheck.iss # Inno Setup 安裝程式腳本
+├── scripts/         # 建置、發佈、更新測試腳本
+├── .github/workflows/release.yml  # 推送標籤時自動建置與發佈
 └── output/          # 截圖結果儲存資料夾
 ```
+
+---
+
+## 發佈（開發者）
+
+```powershell
+# 更新版本 → 提交 → 標籤 → 推送
+# 標籤推送後，GitHub Actions 會建置安裝程式並發佈到 Releases。
+.\scripts\release.ps1 -Version 0.3.0 -Notes "變更內容"
+
+# 發佈前在本機測試更新功能（不會上傳到 GitHub）
+.\scripts\test_update.ps1
+```
+
+- 發佈說明（`-Notes`）會以純文字直接顯示在應用程式的更新視窗中。
+- 若腳本執行被封鎖，請以 `powershell -ExecutionPolicy Bypass -File .\scripts\release.ps1 -Version ...` 的形式執行。
 
 ---
 

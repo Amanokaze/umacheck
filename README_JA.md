@@ -2,7 +2,7 @@
 
 ウマ娘のサークルメンバーのファン数リストを自動でキャプチャし、Gemini AIで数値を抽出する Windows デスクトップアプリです。
 
-> 制作者: 선두의경치 (韓国サーバー) · v0.1.1
+> 制作者: 선두의경치 (韓国サーバー) · v0.2.0
 
 **他の言語:** [한국어](README.md) · [English](README_EN.md) · [繁體中文](README_ZH.md)
 
@@ -31,6 +31,7 @@
 
 ### その他
 - アプリからゲームを直接起動可能
+- 新バージョンの自動確認とアプリ内アップデート
 - 多言語対応: 한국어 / English / 日本語 / 繁體中文
 
 ---
@@ -38,13 +39,23 @@
 ## 動作環境
 
 - **OS:** Windows 10 / 11
-- **Python:** 3.12 以上
+- **Python:** 3.12 以上（ソースから直接実行する場合のみ）
 - **ゲーム:** ウマ娘 プリティーダービー (KakaoGames 韓国サーバー)
 - **Gemini API Key:** [Google AI Studio](https://aistudio.google.com/apikey) で無料取得
 
 ---
 
 ## インストールと起動
+
+### インストーラーでインストール（一般ユーザー）
+
+1. [Releases ページ](https://github.com/Amanokaze/umacheck/releases/latest) から `UmaCheck-Setup-vX.Y.Z.exe` をダウンロードします。
+2. インストーラーを実行します。以前のバージョンがある場合は上書きされ、設定と API Key はそのまま保持されます。
+3. スタートメニューまたはデスクトップの **UmaCheck** から起動します。
+
+v0.2.0 以降、アプリ起動時に新しいバージョンを自動で確認します。アップデート画面で **[アップデート]** を押すと、新バージョンをダウンロード・インストールした後にアプリが再起動します。情報 (i) 画面の **[アップデート確認]** から手動で確認することもできます。
+
+### ソースから実行（開発者）
 
 ```bash
 # 依存ライブラリのインストール
@@ -123,11 +134,33 @@ uma-fancheck-app/
 ├── icon.png         # アプリアイコン
 ├── src/
 │   ├── capture.py   # ゲームウィンドウ検出・自動キャプチャ
-│   └── stitch.py    # 重複除去・画像合成
+│   ├── stitch.py    # 重複除去・画像合成
+│   ├── updater.py   # GitHub Releases によるアップデート確認・インストール
+│   └── version.py   # アプリのバージョン（一元管理）
 ├── web/
 │   └── app.html     # アプリ UI (HTML/CSS/JS)
+├── installer/
+│   └── umacheck.iss # Inno Setup インストーラースクリプト
+├── scripts/         # ビルド・リリース・アップデートテスト用スクリプト
+├── .github/workflows/release.yml  # タグ push 時の自動ビルド・リリース
 └── output/          # キャプチャ結果の保存フォルダ
 ```
+
+---
+
+## リリース（開発者）
+
+```powershell
+# バージョン更新 → コミット → タグ → push
+# タグが push されると GitHub Actions がインストーラーをビルドし Releases に登録します。
+.\scripts\release.ps1 -Version 0.3.0 -Notes "変更内容"
+
+# リリース前にローカルでアップデート機能をテスト（GitHub にはアップロードしない）
+.\scripts\test_update.ps1
+```
+
+- リリースノート（`-Notes`）はアプリのアップデート画面にプレーンテキストでそのまま表示されます。
+- スクリプトの実行がブロックされる場合は `powershell -ExecutionPolicy Bypass -File .\scripts\release.ps1 -Version ...` の形式で実行してください。
 
 ---
 

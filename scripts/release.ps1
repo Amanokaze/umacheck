@@ -38,11 +38,18 @@ $Utf8 = New-Object System.Text.UTF8Encoding($false)
 $Content = [regex]::Replace($Content, '__version__\s*=\s*"[^"]+"', "__version__ = `"$Version`"")
 [IO.File]::WriteAllText($VersionFile, $Content, $Utf8)
 
+# README 상단의 버전 표기 (예: "· v0.1.1") 갱신
+$Readmes = Get-ChildItem "README*.md"
+foreach ($f in $Readmes) {
+  $text = [IO.File]::ReadAllText($f.FullName)
+  [IO.File]::WriteAllText($f.FullName, [regex]::Replace($text, '· v\d+\.\d+\.\d+', "· v$Version"), $Utf8)
+}
+
 $MsgFile = Join-Path $env:TEMP "umacheck-tag-msg.txt"
 $Message = if ($Notes) { $Notes } else { "UmaCheck $Tag" }
 [IO.File]::WriteAllText($MsgFile, $Message, $Utf8)
 
-git add $VersionFile
+git add $VersionFile $Readmes.FullName
 git commit -m "Release $Tag"
 if ($LASTEXITCODE -ne 0) { throw "git commit failed" }
 git tag -a $Tag -F $MsgFile

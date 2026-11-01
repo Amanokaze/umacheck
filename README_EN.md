@@ -2,7 +2,7 @@
 
 A Windows desktop app that automatically captures the fan count list of Uma Musume circle members and extracts the numbers using Gemini AI.
 
-> Creator: 선두의경치 (Korean Server) · v0.1.1
+> Creator: 선두의경치 (Korean Server) · v0.2.0
 
 **Other languages:** [한국어](README.md) · [日本語](README_JA.md) · [繁體中文](README_ZH.md)
 
@@ -31,6 +31,7 @@ A Windows desktop app that automatically captures the fan count list of Uma Musu
 
 ### Other
 - Launch the game directly from the app
+- Automatic update check and in-app update
 - Multilingual support: Korean / English / Japanese / Traditional Chinese
 
 ---
@@ -38,13 +39,23 @@ A Windows desktop app that automatically captures the fan count list of Uma Musu
 ## Requirements
 
 - **OS:** Windows 10 / 11
-- **Python:** 3.12 or later
+- **Python:** 3.12 or later (only when running from source)
 - **Game:** Uma Musume Pretty Derby (KakaoGames Korean Server)
 - **Gemini API Key:** Get a free key at [Google AI Studio](https://aistudio.google.com/apikey)
 
 ---
 
 ## Installation & Launch
+
+### Install with the installer (users)
+
+1. Download `UmaCheck-Setup-vX.Y.Z.exe` from the [Releases page](https://github.com/Amanokaze/umacheck/releases/latest).
+2. Run the installer. If a previous version is installed, it is overwritten and your settings and API Key are kept.
+3. Launch **UmaCheck** from the Start menu or desktop.
+
+Since v0.2.0, the app checks for a new version on startup. Click **[Update]** in the update dialog to download and install it; the app restarts afterwards. You can also check manually with **[Check for Updates]** in the About (i) dialog.
+
+### Run from source (developers)
 
 ```bash
 # Install dependencies
@@ -123,11 +134,33 @@ uma-fancheck-app/
 ├── icon.png         # App icon
 ├── src/
 │   ├── capture.py   # Game window detection and auto capture
-│   └── stitch.py    # Overlap removal and image stitching
+│   ├── stitch.py    # Overlap removal and image stitching
+│   ├── updater.py   # Update check/install via GitHub Releases
+│   └── version.py   # App version (single source)
 ├── web/
 │   └── app.html     # App UI (HTML/CSS/JS)
+├── installer/
+│   └── umacheck.iss # Inno Setup installer script
+├── scripts/         # Build, release, and update test scripts
+├── .github/workflows/release.yml  # Auto build & release on tag push
 └── output/          # Captured image output folder
 ```
+
+---
+
+## Release (developers)
+
+```powershell
+# Bump version -> commit -> tag -> push
+# When the tag is pushed, GitHub Actions builds the installer and publishes it to Releases.
+.\scripts\release.ps1 -Version 0.3.0 -Notes "What changed"
+
+# Test the update feature locally before releasing (nothing is uploaded to GitHub)
+.\scripts\test_update.ps1
+```
+
+- The release notes (`-Notes`) are shown as plain text in the app's update dialog.
+- If script execution is blocked, run `powershell -ExecutionPolicy Bypass -File .\scripts\release.ps1 -Version ...`.
 
 ---
 
