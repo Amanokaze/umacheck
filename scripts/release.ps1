@@ -44,12 +44,16 @@ $Message = if ($Notes) { $Notes } else { "UmaCheck $Tag" }
 
 git add $VersionFile
 git commit -m "Release $Tag"
+if ($LASTEXITCODE -ne 0) { throw "git commit failed" }
 git tag -a $Tag -F $MsgFile
+if ($LASTEXITCODE -ne 0) { throw "git tag failed" }
 Remove-Item $MsgFile
 
 Write-Host "Pushing main and $Tag ..."
 git push origin main
+if ($LASTEXITCODE -ne 0) { throw "git push main failed. Fix and run: git push origin main; git push origin $Tag" }
 git push origin $Tag
+if ($LASTEXITCODE -ne 0) { throw "git push tag failed. Fix and run: git push origin $Tag" }
 
 Write-Host ""
 Write-Host "Done. GitHub Actions will build and publish the release:"
