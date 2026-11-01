@@ -20,7 +20,7 @@
 
 ### 분석
 - Gemini API를 이용해 캡처 이미지에서 팬수 숫자 자동 추출
-- 지원 모델: `gemini-2.5-flash` (추천), `gemini-2.0-flash`, `gemini-2.0-flash-lite`, `gemini-2.5-pro`
+- 지원 모델 (모두 무료 등급 사용 가능): `gemini-3.6-flash` (추천), `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`
 - 연속 중복 숫자 자동 제거 옵션
 - 결과를 클립보드로 복사 가능
 - 이미지 드래그 앤 드롭 또는 파일 선택 지원
@@ -109,7 +109,7 @@ python main.py --debug
 - **Windows 전용** 앱입니다. macOS, Linux에서는 동작하지 않습니다.
 - 캡처 중에는 마우스를 건드리지 마세요. 앱이 마우스를 자동 제어합니다.
 - `config.json`에 Gemini API Key가 저장됩니다. 이 파일을 외부에 공유하지 마세요.
-- Gemini API 무료 등급은 사용량 제한이 있습니다. 대용량 이미지 분석 시 `gemini-2.5-flash` 모델을 권장합니다.
+- Gemini API 무료 등급은 사용량 제한이 있습니다. 대용량 이미지 분석 시 `gemini-3.6-flash` 모델을 권장합니다.
 
 ---
 

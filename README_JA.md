@@ -20,7 +20,7 @@
 
 ### 分析
 - Gemini API を使い、キャプチャ画像からファン数を自動抽出
-- 対応モデル: `gemini-2.5-flash` (推奨)、`gemini-2.0-flash`、`gemini-2.0-flash-lite`、`gemini-2.5-pro`
+- 対応モデル (すべて無料枠で利用可): `gemini-3.6-flash` (推奨)、`gemini-3.5-flash-lite`、`gemini-3.1-flash-lite`
 - 連続する重複数値の自動除去オプション
 - 結果をクリップボードにコピー可能
 - 画像のドラッグ＆ドロップまたはファイル選択に対応
@@ -109,7 +109,7 @@ python main.py --debug
 - **Windows 専用**アプリです。macOS・Linux では動作しません。
 - キャプチャ中はマウスを操作しないでください。アプリが自動制御します。
 - Gemini API Key は `config.json` に保存されます。このファイルを外部に公開しないでください。
-- Gemini API の無料枠には使用量制限があります。大きな画像の分析には `gemini-2.5-flash` を推奨します。
+- Gemini API の無料枠には使用量制限があります。大きな画像の分析には `gemini-3.6-flash` を推奨します。
 
 ---
 

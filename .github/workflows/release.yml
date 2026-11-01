@@ -1,0 +1,60 @@
+# v1.2.3 형식의 태그가 push 되면 설치 파일을 빌드하고 GitHub Release 를 생성합니다.
+# 앱의 업데이트 확인 기능은 이 Release 에 첨부된 UmaCheck-Setup-v*.exe 를 내려받습니다.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check tag matches src/version.py
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart("v")
+          $ver = (Select-String -Path src/version.py -Pattern '__version__\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+          if ($tag -ne $ver) { throw "Tag v$tag does not match src/version.py ($ver)" }
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
+        shell: pwsh
+        run: ./scripts/build_installer.ps1
+
+      - name: Read release notes from tag message
+        shell: pwsh
+        run: |
+          git fetch --tags --force
+          $notes = git for-each-ref "refs/tags/${{ github.ref_name }}" --format="%(contents)"
+          ($notes -join "`n").Trim() | Out-File -Encoding utf8 release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: UmaCheck ${{ github.ref_name }}
+          # 릴리즈 노트는 앱의 업데이트 창에 일반 텍스트로 표시되므로 태그 메시지만 사용
+          body_path: release-notes.md
+          files: dist-installer/UmaCheck-Setup-${{ github.ref_name }}.exe
+          fail_on_unmatched_files: true

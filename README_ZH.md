@@ -20,7 +20,7 @@
 
 ### 分析
 - 使用 Gemini API 自動從截圖中擷取粉絲數數值
-- 支援模型：`gemini-2.5-flash`（推薦）、`gemini-2.0-flash`、`gemini-2.0-flash-lite`、`gemini-2.5-pro`
+- 支援模型（皆可使用免費方案）：`gemini-3.6-flash`（推薦）、`gemini-3.5-flash-lite`、`gemini-3.1-flash-lite`
 - 可選擇自動移除連續重複數值
 - 支援將結果複製到剪貼簿
 - 支援圖片拖放或檔案選擇
@@ -109,7 +109,7 @@ python main.py --debug
 - 本應用程式**僅支援 Windows**，無法在 macOS 或 Linux 上執行。
 - 截圖過程中請勿移動滑鼠，應用程式會自動控制。
 - Gemini API Key 儲存於 `config.json`，請勿將此檔案公開分享。
-- Gemini API 免費方案有使用量限制，分析大型圖片時建議使用 `gemini-2.5-flash`。
+- Gemini API 免費方案有使用量限制，分析大型圖片時建議使用 `gemini-3.6-flash`。
 
 ---
 

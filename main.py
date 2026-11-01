@@ -5,12 +5,15 @@ pywebview 기반 Windows 데스크탑 앱
 import os
 import sys
 import json
+import time
 import queue
 import base64
 import threading
 import subprocess
 import ctypes
 import webview
+
+from src.version import __version__
 
 # ── 경로 설정 ──────────────────────────────────────────────────────────────
 APP_TITLE = "UmaCheck"
@@ -51,6 +54,24 @@ _event_queue: queue.Queue = queue.Queue()
 
 def _push(type_: str, **kw):
     _event_queue.put({"type": type_, **kw})
+
+
+# ── 업데이트 상태 (JS가 get_update_state 로 폴링) ──────────────────────────
+_update_info: dict = {}
+_update_state: dict = {"status": "idle", "pct": 0, "msg": ""}
+
+
+def _update_feed_url() -> str | None:
+    if "--update-feed" not in sys.argv:
+        return None
+    idx = sys.argv.index("--update-feed") + 1
+    if idx >= len(sys.argv):
+        return None
+    feed = sys.argv[idx]
+    if feed.startswith(("http://", "https://", "file:")):
+        return feed
+    from pathlib import Path
+    return Path(feed).resolve().as_uri()
 
 
 # ── JS에 노출할 API 클래스 ──────────────────────────────────────────────────
@@ -208,6 +229,47 @@ class Api:
     def open_folder(self, file_path: str):
         folder = os.path.dirname(file_path)
         subprocess.Popen(["explorer", folder])
+
+    # 앱 버전
+    def get_app_version(self) -> str:
+        return __version__
+
+    # GitHub 최신 릴리즈 확인 (--update-feed <json 경로/URL> 로 테스트용 목록 지정 가능)
+    def check_update(self) -> dict:
+        try:
+            from src.updater import check_latest
+            info = check_latest(_update_feed_url())
+        except Exception as e:
+            return {"error": str(e)}
+        _update_info.clear()
+        _update_info.update(info)
+        return {k: info.get(k) for k in ("available", "current", "latest", "notes", "page_url")}
+
+    # 설치 파일 다운로드 → 설치 프로그램 실행 → 앱 종료
+    def start_update(self):
+        if not _update_info.get("available") or _update_state["status"] == "downloading":
+            return
+        _update_state.update(status="downloading", pct=0, msg="")
+
+        def run():
+            try:
+                from src.updater import download, launch_installer
+                path = download(_update_info, on_progress=lambda pct: _update_state.update(pct=pct))
+                launch_installer(path)
+                _update_state.update(status="installing", pct=100)
+            except Exception as e:
+                _update_state.update(status="error", msg=str(e))
+                return
+            # JS가 안내 문구를 표시할 시간을 준 뒤 프로세스를 즉시 종료.
+            # window.destroy()로 닫으면 설치 프로그램(/CLOSEAPPLICATIONS)이 보내는 WM_CLOSE와 겹쳐
+            # pywebview 종료 처리가 두 번 실행되며 예외 창(KeyError 'master')이 뜸
+            time.sleep(1.0)
+            os._exit(0)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def get_update_state(self) -> dict:
+        return dict(_update_state)
 
 
 # ── 앱 진입점 ──────────────────────────────────────────────────────────────

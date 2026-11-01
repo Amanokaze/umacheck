@@ -382,6 +382,24 @@
       border-radius: 8px; border-left: 3px solid var(--accent); line-height: 1.5;
     }
     .help-close-btn { width: 100%; }
+
+    /* 업데이트 */
+    .link-btn { background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; }
+    .link-btn:disabled { color: var(--dim); cursor: default; text-decoration: none; }
+    .update-check-status { font-size: 0.78rem; color: var(--muted); margin-right: 8px; }
+    .update-check-status.new { color: var(--success-dim); font-weight: 600; }
+    .update-check-status.error { color: var(--error); }
+    .update-modal { width: 440px; }
+    .update-versions { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+    .update-versions strong { color: var(--success-dim); }
+    .update-notes {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 0.78rem; color: var(--muted); line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
+      max-height: 200px; overflow-y: auto; margin-bottom: 14px;
+    }
+    .update-error { font-size: 0.78rem; color: var(--error); margin-bottom: 10px; display: none; }
+    .update-actions { display: flex; justify-content: flex-end; gap: 8px; }
   </style>
 </head>
 <body>
@@ -475,7 +493,14 @@
       </div>
       <div class="modal-row">
         <span class="label" id="about-version-label">버전</span>
-        <span class="value">v0.1.1</span>
+        <span class="value" id="about-version-value"></span>
+      </div>
+      <div class="modal-row">
+        <span class="label" id="about-update-label">업데이트</span>
+        <span>
+          <span class="update-check-status" id="update-check-status"></span>
+          <button class="modal-link link-btn" id="update-check-btn"></button>
+        </span>
       </div>
       <div class="modal-row">
         <span class="label" id="about-creator-label">제작자</span>
@@ -515,6 +540,30 @@
             rel="noopener noreferrer"
           >Link</a>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 업데이트 모달 -->
+  <div class="modal-backdrop" id="update-modal">
+    <div class="modal update-modal">
+      <button class="modal-close" id="update-close">✕</button>
+      <div class="help-modal-title" id="update-title"></div>
+      <div class="update-versions"><span id="update-current"></span> → <strong id="update-latest"></strong></div>
+      <div class="update-notes" id="update-notes"></div>
+      <div id="update-progress-wrap" style="display:none;">
+        <div class="progress-header">
+          <span id="update-prog-text"></span>
+          <span id="update-prog-pct">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="update-prog-bar"></div>
+        </div>
+      </div>
+      <div class="update-error" id="update-error"></div>
+      <div class="update-actions">
+        <button class="btn btn-ghost" id="update-later-btn"></button>
+        <button class="btn btn-primary" id="update-now-btn"></button>
       </div>
     </div>
   </div>
@@ -595,10 +644,9 @@
           <div class="field-row">
             <label id="label-model"></label>
             <select id="model-select">
-              <option value="gemini-2.5-flash" id="model-opt-flash25"></option>
-              <option value="gemini-2.0-flash" id="model-opt-flash20"></option>
-              <option value="gemini-2.0-flash-lite" id="model-opt-flashlite"></option>
-              <option value="gemini-2.5-pro" id="model-opt-pro25"></option>
+              <option value="gemini-3.6-flash" id="model-opt-flash36"></option>
+              <option value="gemini-3.5-flash-lite" id="model-opt-flashlite35"></option>
+              <option value="gemini-3.1-flash-lite" id="model-opt-flashlite31"></option>
             </select>
           </div>
         </div>
@@ -626,9 +674,9 @@
       </label>
 
       <div id="az-progress-wrap" style="display:none;flex-direction:column;gap:7px;margin-bottom:12px;">
-        <div class="progress-header">
+        <div class="progress-header" style="align-items:center;">
           <span id="az-prog-text"></span>
-          <span></span>
+          <button class="btn btn-ghost" id="az-cancel-btn" style="padding:4px 13px;font-size:0.78rem;"></button>
         </div>
         <div class="progress-bar-bg">
           <div class="progress-bar" id="az-prog-bar" style="width:60%"></div>
@@ -719,15 +767,16 @@ const i18n = {
     btnOpenFolder: '폴더 열기', btnGoAnalyze: '분석 탭으로 →',
     sectionGeminiApi: 'Gemini API', labelApiKey: 'API Key',
     apiKeyHint: '발급: ', labelModel: '모델',
-    modelFlash25: 'gemini-2.5-flash — 최신·추천 (무료)',
-    modelFlash20: 'gemini-2.0-flash — 안정적 (무료)',
-    modelFlashLite: 'gemini-2.0-flash-lite — 가장 저렴',
-    modelPro25: 'gemini-2.5-pro — 최고 성능 (유료)',
+    modelFlash36: 'gemini-3.6-flash — 추천 (무료)',
+    modelFlashLite35: 'gemini-3.5-flash-lite — 빠름·경량 (무료)',
+    modelFlashLite31: 'gemini-3.1-flash-lite — 가장 가벼움 (무료)',
     sectionImage: '이미지',
     dzText: '이미지를 드래그하거나 ', dzSelectFile: '파일 선택',
     btnExtract: 'Extract',
     dedupLabel: '연속 중복 자동 제거 (같은 숫자가 연속으로 나오면 하나만 유지)',
     azPreparing: '준비 중...', outputHeader: '추출 결과',
+    azAnalyzingFmt: (n, sec) => `분석 중... (이미지 ${n}조각 · ${sec}초)`,
+    btnCancel: '중단', azCancelled: '중단했습니다. 다른 모델을 선택해 다시 시도할 수 있습니다.',
     btnCopy: '복사', btnCopied: '복사됨 ✓',
     noResults: '(결과 없음 — 이미지에서 "000명" 패턴을 찾지 못했습니다)',
     countFmt: (n, d) => d > 0 ? `${n}개 (연속중복 ${d}개 제거)` : `${n}개`,
@@ -765,6 +814,13 @@ const i18n = {
     helpStep4: '생성된 키를 복사해서 API Key 입력란에 붙여넣으세요.',
     helpNote: '※ AI Studio에서 발급한 키를 사용해야 무료 티어가 적용됩니다. Google Cloud Console 키 사용 시 무료 티어 없음.',
     helpClose: '닫기',
+    aboutUpdate: '업데이트', btnCheckUpdate: '업데이트 확인',
+    updChecking: '확인 중...', updUpToDate: '최신 버전입니다', updNewShort: '새 버전 있음', updCheckFail: '확인 실패',
+    updTitle: '새 버전이 있습니다', updNotesEmpty: '변경 사항 정보가 없습니다.',
+    btnUpdateLater: '나중에', btnUpdateNow: '업데이트',
+    updDownloading: '다운로드 중...',
+    updInstalling: '설치 프로그램을 실행합니다. 설치가 끝나면 앱이 다시 시작됩니다.',
+    updFailPrefix: '업데이트 실패: ',
   },
   en: {
     appName: 'UmaCheck',
@@ -787,15 +843,16 @@ const i18n = {
     btnOpenFolder: 'Open Folder', btnGoAnalyze: 'Go to Analyze →',
     sectionGeminiApi: 'Gemini API', labelApiKey: 'API Key',
     apiKeyHint: 'Get key: ', labelModel: 'Model',
-    modelFlash25: 'gemini-2.5-flash — Latest · Recommended (Free)',
-    modelFlash20: 'gemini-2.0-flash — Stable (Free)',
-    modelFlashLite: 'gemini-2.0-flash-lite — Most Affordable',
-    modelPro25: 'gemini-2.5-pro — Best Performance (Paid)',
+    modelFlash36: 'gemini-3.6-flash — Recommended (Free)',
+    modelFlashLite35: 'gemini-3.5-flash-lite — Fast · Lightweight (Free)',
+    modelFlashLite31: 'gemini-3.1-flash-lite — Lightest (Free)',
     sectionImage: 'Image',
     dzText: 'Drag an image or ', dzSelectFile: 'Select File',
     btnExtract: 'Extract',
     dedupLabel: 'Remove consecutive duplicates (keep one if same number repeats)',
     azPreparing: 'Preparing...', outputHeader: 'Results',
+    azAnalyzingFmt: (n, sec) => `Analyzing... (${n} image part${n > 1 ? 's' : ''} · ${sec}s)`,
+    btnCancel: 'Cancel', azCancelled: 'Cancelled. You can choose another model and try again.',
     btnCopy: 'Copy', btnCopied: 'Copied ✓',
     noResults: '(No results — "000 members" pattern not found in image)',
     countFmt: (n, d) => d > 0 ? `${n} item(s) (${d} dup(s) removed)` : `${n} item(s)`,
@@ -834,6 +891,13 @@ const i18n = {
     helpStep4: 'Copy the generated key and paste it in the API Key field.',
     helpNote: '※ Keys from AI Studio qualify for the free tier. Keys from Google Cloud Console do not.',
     helpClose: 'Close',
+    aboutUpdate: 'Update', btnCheckUpdate: 'Check for Updates',
+    updChecking: 'Checking...', updUpToDate: 'Up to date', updNewShort: 'New version available', updCheckFail: 'Check failed',
+    updTitle: 'A new version is available', updNotesEmpty: 'No release notes.',
+    btnUpdateLater: 'Later', btnUpdateNow: 'Update',
+    updDownloading: 'Downloading...',
+    updInstalling: 'Starting the installer. The app will restart when installation is complete.',
+    updFailPrefix: 'Update failed: ',
   },
   ja: {
     appName: 'ウマチェック',
@@ -856,15 +920,16 @@ const i18n = {
     btnOpenFolder: 'フォルダを開く', btnGoAnalyze: '分析タブへ →',
     sectionGeminiApi: 'Gemini API', labelApiKey: 'API Key',
     apiKeyHint: '発行: ', labelModel: 'モデル',
-    modelFlash25: 'gemini-2.5-flash — 最新・推奨 (無料)',
-    modelFlash20: 'gemini-2.0-flash — 安定 (無料)',
-    modelFlashLite: 'gemini-2.0-flash-lite — 最も低コスト',
-    modelPro25: 'gemini-2.5-pro — 最高性能 (有料)',
+    modelFlash36: 'gemini-3.6-flash — 推奨 (無料)',
+    modelFlashLite35: 'gemini-3.5-flash-lite — 高速・軽量 (無料)',
+    modelFlashLite31: 'gemini-3.1-flash-lite — 最軽量 (無料)',
     sectionImage: '画像',
     dzText: '画像をドラッグまたは ', dzSelectFile: 'ファイルを選択',
     btnExtract: '抽出',
     dedupLabel: '連続重複を自動削除（同じ数字が連続する場合は1つだけ保持）',
     azPreparing: '準備中...', outputHeader: '抽出結果',
+    azAnalyzingFmt: (n, sec) => `分析中... (画像 ${n}分割 · ${sec}秒)`,
+    btnCancel: '中断', azCancelled: '中断しました。別のモデルを選択して再試行できます。',
     btnCopy: 'コピー', btnCopied: 'コピー済み ✓',
     noResults: '（結果なし — 画像内に「000人」のパターンが見つかりませんでした）',
     countFmt: (n, d) => d > 0 ? `${n}件（連続重複${d}件削除）` : `${n}件`,
@@ -903,6 +968,13 @@ const i18n = {
     helpStep4: '生成されたキーをコピーしてAPI Key欄に貼り付けてください。',
     helpNote: '※ AI Studioで発行したキーは無料ティアが適用されます。Google Cloud Consoleのキーは無料ティアなし。',
     helpClose: '閉じる',
+    aboutUpdate: 'アップデート', btnCheckUpdate: 'アップデート確認',
+    updChecking: '確認中...', updUpToDate: '最新バージョンです', updNewShort: '新しいバージョンあり', updCheckFail: '確認失敗',
+    updTitle: '新しいバージョンがあります', updNotesEmpty: '変更内容の情報がありません。',
+    btnUpdateLater: '後で', btnUpdateNow: 'アップデート',
+    updDownloading: 'ダウンロード中...',
+    updInstalling: 'インストーラーを起動します。インストール完了後にアプリが再起動します。',
+    updFailPrefix: 'アップデート失敗: ',
   },
   zh: {
     appName: '賽馬娘檢查',
@@ -925,15 +997,16 @@ const i18n = {
     btnOpenFolder: '開啟資料夾', btnGoAnalyze: '前往分析 →',
     sectionGeminiApi: 'Gemini API', labelApiKey: 'API Key',
     apiKeyHint: '取得金鑰: ', labelModel: '模型',
-    modelFlash25: 'gemini-2.5-flash — 最新·推薦 (免費)',
-    modelFlash20: 'gemini-2.0-flash — 穩定 (免費)',
-    modelFlashLite: 'gemini-2.0-flash-lite — 最低成本',
-    modelPro25: 'gemini-2.5-pro — 最高性能 (付費)',
+    modelFlash36: 'gemini-3.6-flash — 推薦 (免費)',
+    modelFlashLite35: 'gemini-3.5-flash-lite — 快速·輕量 (免費)',
+    modelFlashLite31: 'gemini-3.1-flash-lite — 最輕量 (免費)',
     sectionImage: '圖片',
     dzText: '拖曳圖片或 ', dzSelectFile: '選擇檔案',
     btnExtract: '提取',
     dedupLabel: '自動移除連續重複（相同數字連續出現時只保留一個）',
     azPreparing: '準備中...', outputHeader: '提取結果',
+    azAnalyzingFmt: (n, sec) => `分析中... (圖片 ${n} 段 · ${sec} 秒)`,
+    btnCancel: '中斷', azCancelled: '已中斷。可選擇其他模型後重試。',
     btnCopy: '複製', btnCopied: '已複製 ✓',
     noResults: '（無結果 — 圖片中未找到「000人」的格式）',
     countFmt: (n, d) => d > 0 ? `${n}個（移除連續重複${d}個）` : `${n}個`,
@@ -972,6 +1045,13 @@ const i18n = {
     helpStep4: '複製產生的金鑰並貼入 API Key 欄位。',
     helpNote: '※ 使用 AI Studio 發行的金鑰可享受免費額度。Google Cloud Console 的金鑰不享免費額度。',
     helpClose: '關閉',
+    aboutUpdate: '更新', btnCheckUpdate: '檢查更新',
+    updChecking: '檢查中...', updUpToDate: '已是最新版本', updNewShort: '有新版本', updCheckFail: '檢查失敗',
+    updTitle: '有新版本可用', updNotesEmpty: '沒有更新說明。',
+    btnUpdateLater: '稍後', btnUpdateNow: '更新',
+    updDownloading: '下載中...',
+    updInstalling: '正在啟動安裝程式。安裝完成後應用程式將重新啟動。',
+    updFailPrefix: '更新失敗: ',
   },
 };
 
@@ -1017,14 +1097,14 @@ function applyLang() {
   document.getElementById('label-apikey').textContent        = t('labelApiKey');
   document.getElementById('apikey-hint').textContent         = t('apiKeyHint');
   document.getElementById('label-model').textContent         = t('labelModel');
-  document.getElementById('model-opt-flash25').textContent   = t('modelFlash25');
-  document.getElementById('model-opt-flash20').textContent   = t('modelFlash20');
-  document.getElementById('model-opt-flashlite').textContent = t('modelFlashLite');
-  document.getElementById('model-opt-pro25').textContent     = t('modelPro25');
+  document.getElementById('model-opt-flash36').textContent     = t('modelFlash36');
+  document.getElementById('model-opt-flashlite35').textContent = t('modelFlashLite35');
+  document.getElementById('model-opt-flashlite31').textContent = t('modelFlashLite31');
   document.getElementById('section-image').textContent       = t('sectionImage');
   document.getElementById('extract-btn').textContent         = t('btnExtract');
   document.getElementById('dedup-label').textContent         = t('dedupLabel');
   document.getElementById('az-prog-text').textContent        = t('azPreparing');
+  document.getElementById('az-cancel-btn').textContent       = t('btnCancel');
   document.getElementById('output-header-text').textContent  = t('outputHeader');
   document.getElementById('copy-btn').textContent            = t('btnCopy');
   document.getElementById('dz-text-wrap').innerHTML =
@@ -1073,6 +1153,14 @@ function applyLang() {
   document.getElementById('help-step4').textContent            = t('helpStep4');
   document.getElementById('help-note').textContent             = t('helpNote');
   document.getElementById('apikey-help-close-btn').textContent = t('helpClose');
+
+  // 업데이트
+  document.getElementById('about-update-label').textContent = t('aboutUpdate');
+  document.getElementById('update-check-btn').textContent   = t('btnCheckUpdate');
+  document.getElementById('update-title').textContent       = t('updTitle');
+  document.getElementById('update-later-btn').textContent   = t('btnUpdateLater');
+  document.getElementById('update-now-btn').textContent     = t('btnUpdateNow');
+  if (updateCheckState) setUpdateCheckStatus(updateCheckState);
 
   // 언어 옵션 active 표시
   document.querySelectorAll('.lang-option').forEach(btn => {
@@ -1157,10 +1245,15 @@ async function initApp() {
     await loadSettings();
   } catch(_) {}
 
-  // 첫 실행 감지 → 초기 설정 모달
+  try {
+    document.getElementById('about-version-value').textContent = 'v' + await pywebview.api.get_app_version();
+  } catch(_) {}
+
+  // 첫 실행 감지 → 초기 설정 모달 (첫 실행이 아니면 업데이트 자동 확인)
   try {
     const hasConfig = await pywebview.api.has_config();
     if (!hasConfig) showSetupModal();
+    else checkUpdate(false);
   } catch(_) {}
 
   checkGameStatus();
@@ -1179,6 +1272,11 @@ async function loadSettings() {
   if (cfg.diff_threshold) document.getElementById('diff-threshold').value = (cfg.diff_threshold * 100).toFixed(1);
   if (cfg.gemini_api_key) apiKeyInput.value  = cfg.gemini_api_key;
   if (cfg.gemini_model)   modelSelect.value  = cfg.gemini_model;
+  // 지원 종료된 구 모델이 저장돼 있으면 목록 첫 번째(추천) 모델로 교체
+  if (modelSelect.selectedIndex < 0) {
+    modelSelect.selectedIndex = 0;
+    pywebview.api.save_config({ gemini_model: modelSelect.value });
+  }
 
   // 언어: config.json > localStorage > Windows 시스템 감지 순
   if (cfg.lang && i18n[cfg.lang]) {
@@ -1440,52 +1538,93 @@ extractBtn.addEventListener('click', async () => {
   await runExtract();
 });
 
+let extractCtrl = null;   // 진행 중인 추출 요청 (중단 버튼용)
+
 async function runExtract() {
   extractBtn.disabled = true;
   hideOutput(); clearAzStatus();
+  const progText = document.getElementById('az-prog-text');
+  progText.textContent = t('azPreparing');
   showAzProgress(true);
   requestAnimationFrame(() => requestAnimationFrame(() => {
     document.getElementById('az-progress-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }));
 
+  // 경과 시간 표시 (멈춘 것인지 진행 중인지 알 수 있도록)
+  const ctrl    = extractCtrl = new AbortController();
+  const started = Date.now();
+  let chunkCount = 0;
+  const tick = () => {
+    if (chunkCount) progText.textContent = i18n[currentLang].azAnalyzingFmt(chunkCount, Math.floor((Date.now() - started) / 1000));
+  };
+  const ticker = setInterval(tick, 1000);
+
   try {
-    const nums = await extractWithGemini(apiKeyInput.value.trim(), modelSelect.value, imgBase64, imgMime);
+    const nums = await extractWithGemini(apiKeyInput.value.trim(), modelSelect.value, imgBase64, imgMime,
+      { signal: ctrl.signal, onChunks: n => { chunkCount = n; tick(); } });
     showAzProgress(false);
     showOutput(nums);
   } catch(err) {
     showAzProgress(false);
-    showAzStatus(t('errPrefix') + err.message, true);
+    if (ctrl.signal.aborted) showAzStatus(t('azCancelled'), false);
+    else showAzStatus(t('errPrefix') + err.message, true);
   } finally {
+    clearInterval(ticker);
+    extractCtrl = null;
     extractBtn.disabled = false;
   }
 }
 
-async function extractWithGemini(apiKey, model, base64, mime) {
-  const prompt = `이 이미지에서 "숫자+명" 형태의 텍스트를 모두 찾으세요.
-예: "150명", "1,234명", "32명" 등.
+document.getElementById('az-cancel-btn').addEventListener('click', () => extractCtrl?.abort());
+
+const GEMINI_TIMEOUT_MS = 120000;
+
+async function extractWithGemini(apiKey, model, base64, mime, { signal, onChunks } = {}) {
+  // Gemini 3.x는 이미지 크기와 무관하게 이미지 1장을 고정된 토큰(약 1120)으로 축소해 처리하므로
+  // 세로로 긴 캡처 이미지는 글자가 뭉개짐 → 조각으로 잘라 여러 장으로 전송
+  const chunks = await splitTallImage(base64, mime);
+  onChunks?.(chunks.length);
+  const prompt = `아래 이미지 ${chunks.length}장은 하나의 긴 세로 이미지를 위에서부터 순서대로 자른 조각입니다. 인접한 조각은 위아래가 일부 겹칩니다.
+각 조각에서 "숫자+명" 형태의 텍스트를 모두 찾으세요.
+예: "150명", "1,234명", "2,318,661,058명" 등.
 
 규칙:
+- 각 조각의 결과 앞에 "#조각번호" 줄을 출력하세요 (예: #1). 숫자가 없는 조각도 "#번호" 줄은 출력하세요.
+- 조각의 위/아래 가장자리에서 잘려 일부만 보이는 숫자는 무시하세요.
 - 숫자 부분만 추출하세요 (쉼표, 공백 제거하여 순수 정수로).
-- 한 줄에 숫자 하나씩, 오직 숫자만 출력하세요.
-- 이미지에 등장하는 순서대로 나열하세요.
-- 이미지에 해당 패턴이 없으면 "없음"이라고만 출력하세요.
-- 설명, 머리말, 꼬리말 없이 숫자 목록만 출력하세요.`;
+- 한 줄에 숫자 하나씩, 조각 안에서 위에서 아래 순서로 나열하세요.
+- 설명, 머리말, 꼬리말 없이 출력하세요.`;
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: mime, data: base64 } }] }],
-        generationConfig: { temperature: 0 }
-      })
-    }
-  );
+  const parts = [{ text: prompt }];
+  chunks.forEach((c, i) => parts.push({ text: `#${i + 1}` }, { inlineData: { mimeType: c.mime, data: c.data } }));
+
+  // 사용자 중단(signal) 또는 시간 초과 시 요청 취소
+  const timeout = AbortSignal.timeout(GEMINI_TIMEOUT_MS);
+  let res, data;
+  try {
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+        body: JSON.stringify({
+          contents: [{ parts }],
+          // Gemini 3.x는 temperature를 기본값(1.0)으로 두는 것을 권장 (낮추면 반복 출력 등 발생 가능)
+          // 사고 수준 기본값(high)은 단순 숫자 추출에 불필요하게 느림
+          generationConfig: { thinkingConfig: { thinkingLevel: 'low' } }
+        })
+      }
+    );
+    data = await res.json().catch(e => { if (signal?.aborted || timeout.aborted) throw e; return {}; });
+  } catch(e) {
+    if (!signal?.aborted && timeout.aborted)
+      throw new Error(`응답 시간 초과 (${GEMINI_TIMEOUT_MS / 1000}초). 다른 모델을 선택하거나 다시 시도하세요.`);
+    throw e;
+  }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    let msg = err?.error?.message || `HTTP ${res.status}`;
+    let msg = data?.error?.message || `HTTP ${res.status}`;
     if (msg.includes('free_tier') || (msg.includes('quota') && msg.includes('limit: 0')))
       msg = 'AI Studio에서 발급한 키를 사용해야 무료 티어가 적용됩니다.';
     else if (msg.includes('API_KEY_INVALID') || msg.includes('API key not valid'))
@@ -1497,14 +1636,63 @@ async function extractWithGemini(apiKey, model, base64, mime) {
     throw new Error(msg);
   }
 
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-  return parseNumbers(text.trim());
+  const outParts = data?.candidates?.[0]?.content?.parts ?? [];
+  const text = outParts.filter(p => p.text && !p.thought).map(p => p.text).join('\n');
+  return mergeChunkNumbers(parseChunkNumbers(text));
 }
 
-function parseNumbers(raw) {
-  if (!raw || raw.trim() === '없음') return [];
-  return raw.split('\n').map(l => l.trim().replace(/,/g, '')).filter(l => /^\d+$/.test(l));
+// 세로 비율이 큰 이미지를 겹치는 조각(JPEG)으로 분할. 조각 높이 = 너비×2, 겹침 = 너비×0.5
+// (팬수 한 줄 높이 ≈ 너비×0.26 이므로 모든 줄이 최소 한 조각에는 온전히 포함됨)
+function splitTallImage(base64, mime) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const chunkH  = w * 2;
+      const overlap = Math.ceil(w * 0.5);
+      if (h <= chunkH * 1.25) { resolve([{ mime, data: base64 }]); return; }
+
+      const canvas = document.createElement('canvas');
+      const ctx    = canvas.getContext('2d');
+      const chunks = [];
+      for (let y = 0; ; y += chunkH - overlap) {
+        const top = Math.min(y, h - chunkH);
+        canvas.width = w; canvas.height = chunkH;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, chunkH);
+        ctx.drawImage(img, 0, top, w, chunkH, 0, 0, w, chunkH);
+        chunks.push({ mime: 'image/jpeg', data: canvas.toDataURL('image/jpeg', 0.92).split(',')[1] });
+        if (top + chunkH >= h) break;
+      }
+      resolve(chunks);
+    };
+    img.onerror = () => reject(new Error('이미지를 읽을 수 없습니다.'));
+    img.src = `data:${mime};base64,${base64}`;
+  });
+}
+
+// "#1\n123\n456\n#2\n..." → [[123, 456], [...]] (머리줄이 없으면 전체를 한 조각으로 취급)
+function parseChunkNumbers(raw) {
+  const groups = [[]];
+  for (const line of (raw || '').split('\n')) {
+    const l = line.trim();
+    if (/^#\s*\d+/.test(l)) { if (groups[groups.length - 1].length) groups.push([]); continue; }
+    const n = l.replace(/[,\s]/g, '').replace(/명$/, '');
+    if (/^\d+$/.test(n)) groups[groups.length - 1].push(n);
+  }
+  return groups;
+}
+
+// 인접 조각의 겹친 영역에서 중복 추출된 숫자 제거: 앞 조각 끝 k개 == 다음 조각 앞 k개 이면 k개 제거
+// (겹침 높이에는 최대 2줄 정도만 들어가므로 k는 3 이하로 제한)
+function mergeChunkNumbers(groups) {
+  const out = [];
+  for (const g of groups) {
+    let k = Math.min(3, out.length, g.length);
+    while (k > 0 && out.slice(-k).join() !== g.slice(0, k).join()) k--;
+    out.push(...g.slice(k));
+  }
+  return out;
 }
 
 
@@ -1639,6 +1827,95 @@ const aboutModal = document.getElementById('about-modal');
 document.getElementById('about-btn').addEventListener('click',   () => aboutModal.classList.add('open'));
 document.getElementById('about-close').addEventListener('click', () => aboutModal.classList.remove('open'));
 aboutModal.addEventListener('click', e => { if (e.target === aboutModal) aboutModal.classList.remove('open'); });
+
+
+/* ════════════════════════════════════════
+   업데이트 (GitHub Releases)
+════════════════════════════════════════ */
+const updateModal    = document.getElementById('update-modal');
+const updateCheckBtn = document.getElementById('update-check-btn');
+const updateNowBtn   = document.getElementById('update-now-btn');
+let updateCheckState = null;   // 'checking' | 'latest' | 'new' | 'error'
+let updating         = false;
+
+function setUpdateCheckStatus(state) {
+  updateCheckState = state;
+  const el = document.getElementById('update-check-status');
+  el.textContent = { checking: t('updChecking'), latest: t('updUpToDate'), new: t('updNewShort'), error: t('updCheckFail') }[state];
+  el.className   = 'update-check-status' + (state === 'new' || state === 'error' ? ' ' + state : '');
+}
+
+// manual: About 모달에서 직접 확인한 경우 (결과를 About 모달에 표시)
+async function checkUpdate(manual) {
+  if (!hasApiMethod('check_update')) return;
+  if (manual) { setUpdateCheckStatus('checking'); updateCheckBtn.disabled = true; }
+  try {
+    const info = await pywebview.api.check_update();
+    if (info.error) { if (manual) setUpdateCheckStatus('error'); return; }
+    if (!info.available) { if (manual) setUpdateCheckStatus('latest'); return; }
+    setUpdateCheckStatus('new');
+    showUpdateModal(info);
+  } catch(_) {
+    if (manual) setUpdateCheckStatus('error');
+  } finally {
+    updateCheckBtn.disabled = false;
+  }
+}
+
+function showUpdateModal(info) {
+  document.getElementById('update-current').textContent = 'v' + info.current;
+  document.getElementById('update-latest').textContent  = 'v' + info.latest;
+  document.getElementById('update-notes').textContent   = info.notes.trim() || t('updNotesEmpty');
+  document.getElementById('update-error').style.display = 'none';
+  aboutModal.classList.remove('open');
+  updateModal.classList.add('open');
+}
+
+function closeUpdateModal() {
+  if (!updating) updateModal.classList.remove('open');
+}
+
+updateNowBtn.addEventListener('click', async () => {
+  // 캡처 중에는 업데이트로 앱이 종료되지 않도록 막음
+  if (capturing) return;
+  updating = true;
+  updateNowBtn.disabled = true;
+  document.getElementById('update-later-btn').disabled = true;
+  document.getElementById('update-error').style.display = 'none';
+  document.getElementById('update-progress-wrap').style.display = 'block';
+  document.getElementById('update-prog-text').textContent = t('updDownloading');
+  await pywebview.api.start_update();
+  pollUpdate();
+});
+
+async function pollUpdate() {
+  let st;
+  try { st = await pywebview.api.get_update_state(); } catch(_) { st = null; }
+  if (st) {
+    document.getElementById('update-prog-bar').style.width = st.pct + '%';
+    document.getElementById('update-prog-pct').textContent = st.pct + '%';
+    if (st.status === 'installing') {
+      document.getElementById('update-prog-text').textContent = t('updInstalling');
+      return;
+    }
+    if (st.status === 'error') {
+      const err = document.getElementById('update-error');
+      err.textContent   = t('updFailPrefix') + st.msg;
+      err.style.display = 'block';
+      document.getElementById('update-progress-wrap').style.display = 'none';
+      updating = false;
+      updateNowBtn.disabled = false;
+      document.getElementById('update-later-btn').disabled = false;
+      return;
+    }
+  }
+  setTimeout(pollUpdate, 300);
+}
+
+updateCheckBtn.addEventListener('click', () => checkUpdate(true));
+document.getElementById('update-later-btn').addEventListener('click', closeUpdateModal);
+document.getElementById('update-close').addEventListener('click', closeUpdateModal);
+updateModal.addEventListener('click', e => { if (e.target === updateModal) closeUpdateModal(); });
 
 
 /* ════════════════════════════════════════

@@ -20,7 +20,7 @@ A Windows desktop app that automatically captures the fan count list of Uma Musu
 
 ### Analyze
 - Uses the Gemini API to automatically extract fan count numbers from the captured image
-- Supported models: `gemini-2.5-flash` (recommended), `gemini-2.0-flash`, `gemini-2.0-flash-lite`, `gemini-2.5-pro`
+- Supported models (all available on the free tier): `gemini-3.6-flash` (recommended), `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`
 - Option to automatically remove consecutive duplicate numbers
 - Copy results to clipboard
 - Supports image drag-and-drop or file selection
@@ -109,7 +109,7 @@ python main.py --debug
 - This app is **Windows only**. It does not run on macOS or Linux.
 - Do not move the mouse during capture — the app controls it automatically.
 - Your Gemini API Key is stored in `config.json`. Do not share this file publicly.
-- The Gemini API free tier has usage limits. For large images, `gemini-2.5-flash` is recommended.
+- The Gemini API free tier has usage limits. For large images, `gemini-3.6-flash` is recommended.
 
 ---
 

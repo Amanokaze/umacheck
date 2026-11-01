@@ -51,3 +51,11 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "
 
 [Run]
 Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Verb: runas; Description: "{cm:LaunchProgram,{#StringChange(AppName,'&','&&')}}"; Flags: postinstall skipifsilent shellexec
+; 앱 내 자동 업데이트(/SILENT /UPDATE=1)로 설치된 경우에만 설치 후 앱을 다시 실행
+Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Verb: runas; Flags: nowait shellexec skipifnotsilent; Check: IsAppUpdate
+
+[Code]
+function IsAppUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;
